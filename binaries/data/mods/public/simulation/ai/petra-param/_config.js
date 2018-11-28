@@ -1,0 +1,1 @@
+const CONFIG = {hello: 'world'};
