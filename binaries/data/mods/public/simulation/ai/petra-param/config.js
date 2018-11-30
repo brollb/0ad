@@ -1,3 +1,21 @@
+API3.warn('about to print config info...');
+API3.warn(parseFloat(Engine.ConfigDB_GetValue('user', 'petra-param.popPhase2')));
+API3.warn(parseFloat(Engine.ConfigDB_GetValue('user', 'petra-param.targetNumWorkers')));
+API3.warn(parseFloat(Engine.ConfigDB_GetValue('user', 'petra-param.workPhase3')));
+API3.warn(parseFloat(Engine.ConfigDB_GetValue('user', 'petra-param.workPhase4')));
+
+API3.warn(parseFloat(Engine.ConfigDB_GetValue('user', 'petra-param.popForBlacksmith')));
+API3.warn(parseFloat(Engine.ConfigDB_GetValue('user', 'petra-param.popForBarracks1')));
+API3.warn(parseFloat(Engine.ConfigDB_GetValue('user', 'petra-param.popForBarracks2')));
+
+API3.warn(parseFloat(Engine.ConfigDB_GetValue('user', 'petra-param.defenseRatioAlly')));
+API3.warn(parseFloat(Engine.ConfigDB_GetValue('user', 'petra-param.defenseRatioNeutral')));
+API3.warn(parseFloat(Engine.ConfigDB_GetValue('user', 'petra-param.defenseRatioOwn')));
+
+API3.warn(parseFloat(Engine.ConfigDB_GetValue('user', 'petra-param.armyCompactSize')));
+API3.warn(parseFloat(Engine.ConfigDB_GetValue('user', 'petra-param.armyBreakawaySize')));
+API3.warn(parseFloat(Engine.ConfigDB_GetValue('user', 'petra-param.armyMergeSize')));
+
 var PETRA = function(m)
 {
 
@@ -236,6 +254,23 @@ m.Config.prototype.setConfig = function(gameState)
 	if (this.debug < 2)
 		return;
 	API3.warn(" >>>  Petra bot: personality = " + uneval(this.personality));
+
+    this.Economy.popPhase2 = parseFloat(Engine.ConfigDB_GetValue('user', 'petra_param_popPhase2'));
+    this.Economy.targetNumWorkers = parseFloat(Engine.ConfigDB_GetValue('user', 'petra_param_targetNumWorkers'));
+    this.Economy.workPhase3 = parseFloat(Engine.ConfigDB_GetValue('user', 'petra_param_workPhase3'));
+    this.Economy.workPhase4 = parseFloat(Engine.ConfigDB_GetValue('user', 'petra_param_workPhase4'));
+
+    this.Military.popForBlacksmith = parseFloat(Engine.ConfigDB_GetValue('user', 'petra_param_popForBlacksmith'));
+    this.Military.popForBarracks1 = parseFloat(Engine.ConfigDB_GetValue('user', 'petra_param_popForBarracks1'));
+    this.Military.popForBarracks2 = parseFloat(Engine.ConfigDB_GetValue('user', 'petra_param_popForBarracks2'));
+
+    this.Defense.defenseRatio.ally = parseFloat(Engine.ConfigDB_GetValue('user', 'petra_param_defenseRatioAlly'));
+    this.Defense.defenseRatio.neutral = parseFloat(Engine.ConfigDB_GetValue('user', 'petra_param_defenseRatioNeutral'));
+    this.Defense.defenseRatio.own = parseFloat(Engine.ConfigDB_GetValue('user', 'petra_param_defenseRatioOwn'));
+
+    this.Defense.armyCompactSize = parseFloat(Engine.ConfigDB_GetValue('user', 'petra_param_armyCompactSize'));
+    this.Defense.armyBreakawaySize = parseFloat(Engine.ConfigDB_GetValue('user', 'petra_param_armyBreakawaySize'));
+    this.Defense.armyMergeSize = parseFloat(Engine.ConfigDB_GetValue('user', 'petra_param_armyMergeSize'));
 };
 
 m.Config.prototype.Serialize = function()

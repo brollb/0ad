@@ -30,6 +30,7 @@
 #include "ps/Filesystem.h"
 #include "ps/Profile.h"
 #include "ps/scripting/JSInterface_VFS.h"
+#include "ps/scripting/JSInterface_ConfigDB.h"
 #include "ps/TemplateLoader.h"
 #include "ps/Util.h"
 #include "simulation2/components/ICmpAIInterface.h"
@@ -237,6 +238,7 @@ public:
 		m_ScriptInterface->RegisterFunction<CParamNode, std::string, CAIWorker::GetTemplate>("GetTemplate");
 
 		JSI_VFS::RegisterScriptFunctions_Simulation(*(m_ScriptInterface.get()));
+        JSI_ConfigDB::RegisterScriptFunctions(*(m_ScriptInterface.get()));
 
 		// Globalscripts may use VFS script functions
 		m_ScriptInterface->LoadGlobalScripts();
