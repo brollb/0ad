@@ -140,6 +140,22 @@ m.Config = function(difficulty, behavior)
 	};
 
 	this.garrisonHealthLevel = { "low": 0.4, "medium": 0.55, "high": 0.7 };
+    this.Economy.popPhase2 = parseFloat(Engine.ConfigDB_GetValue('user', 'petra-param.popPhase2'));
+    this.Economy.targetNumWorkers = parseFloat(Engine.ConfigDB_GetValue('user', 'petra-param.targetNumWorkers'));
+    this.Economy.workPhase3 = parseFloat(Engine.ConfigDB_GetValue('user', 'petra-param.workPhase3'));
+    this.Economy.workPhase4 = parseFloat(Engine.ConfigDB_GetValue('user', 'petra-param.workPhase4'));
+
+    this.Military.popForBlacksmith = parseFloat(Engine.ConfigDB_GetValue('user', 'petra-param.popForBlacksmith'));
+    this.Military.popForBarracks1 = parseFloat(Engine.ConfigDB_GetValue('user', 'petra-param.popForBarracks1'));
+    this.Military.popForBarracks2 = parseFloat(Engine.ConfigDB_GetValue('user', 'petra-param.popForBarracks2'));
+
+    this.Defense.defenseRatio.ally = parseFloat(Engine.ConfigDB_GetValue('user', 'petra-param.defenseRatioAlly'));
+    this.Defense.defenseRatio.neutral = parseFloat(Engine.ConfigDB_GetValue('user', 'petra-param.defenseRatioNeutral'));
+    this.Defense.defenseRatio.own = parseFloat(Engine.ConfigDB_GetValue('user', 'petra-param.defenseRatioOwn'));
+
+    this.Defense.armyCompactSize = parseFloat(Engine.ConfigDB_GetValue('user', 'petra-param.armyCompactSize'));
+    this.Defense.armyBreakawaySize = parseFloat(Engine.ConfigDB_GetValue('user', 'petra-param.armyBreakawaySize'));
+    this.Defense.armyMergeSize = parseFloat(Engine.ConfigDB_GetValue('user', 'petra-param.armyMergeSize'));
 };
 
 m.Config.prototype.setConfig = function(gameState)
