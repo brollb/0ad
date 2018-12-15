@@ -27,6 +27,7 @@
 #include "simulation2/system/ParamNode.h"
 #include "simulation2/system/SimContext.h"
 #include "simulation2/components/ICmpAIManager.h"
+#include "simulation2/components/ICmpAIInterface.h"
 #include "simulation2/components/ICmpCommandQueue.h"
 #include "simulation2/components/ICmpTemplateManager.h"
 
@@ -398,6 +399,17 @@ void CSimulation2Impl::Update(int turnLength, const std::vector<SimulationComman
 		if (serializationTestHash)
 			ENSURE(m_ComponentManager.ComputeStateHash(primaryStateBefore.hash, false));
 	}
+
+    const bool LOG_TRAJECTORY = true;
+    if (LOG_TRAJECTORY) {
+        // TODO: Log the state to a file
+
+		CmpPtr<ICmpAIInterface> cmpAIInterface(m_SimContext.GetSystemEntity());
+        JSContext* cx = scriptInterface.GetContext();
+		JS::RootedValue state(cx);
+		cmpAIInterface->GetFullRepresentation(&state, true);
+        std::cout << "State: " << scriptInterface.StringifyJSON(&state, false) << std::endl;
+    }
 
 	UpdateComponents(m_SimContext, turnLengthFixed, commands);
 
