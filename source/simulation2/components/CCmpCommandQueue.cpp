@@ -115,6 +115,10 @@ public:
 
 		for (size_t i = 0; i < localCommands.size(); ++i)
 		{
+            // TODO: Log these if a CLI arg is set
+            // TODO: Log these to a file
+            auto val = localCommands[i].data;
+            std::cout << "1-- { \"player_id\": " << localCommands[i].player << ", \"action\": " << scriptInterface.StringifyJSON(&val, false) << "}\n";
 			bool ok = scriptInterface.CallFunctionVoid(global, "ProcessCommand", localCommands[i].player, localCommands[i].data);
 			if (!ok)
 				LOGERROR("Failed to call ProcessCommand() global script function");
@@ -122,6 +126,8 @@ public:
 
 		for (size_t i = 0; i < commands.size(); ++i)
 		{
+            auto val = commands[i].data;
+            std::cout << "2-- { \"player_id\": " << commands[i].player << ", \"action\": " << scriptInterface.StringifyJSON(&val, false) << "}\n";
 			bool ok = scriptInterface.CallFunctionVoid(global, "ProcessCommand", commands[i].player, commands[i].data);
 			if (!ok)
 				LOGERROR("Failed to call ProcessCommand() global script function");
