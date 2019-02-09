@@ -84,8 +84,8 @@ private:
     {
 		NONCOPYABLE(BaseAIPlayer);
 	public:
-		BaseAIPlayer(CAIWorker& worker, const std::wstring& aiName, player_id_t player, u8 difficulty, const std::wstring& behavior) :
-			m_Worker(worker), m_AIName(aiName), m_Player(player), m_Difficulty(difficulty), m_Behavior(behavior)
+		BaseAIPlayer(CAIWorker& worker, const std::wstring& aiName, player_id_t player, u8 difficulty, const std::wstring& behavior, shared_ptr<ScriptInterface> scriptInterface) :
+			m_Worker(worker), m_AIName(aiName), m_Player(player), m_Difficulty(difficulty), m_Behavior(behavior), m_ScriptInterface(scriptInterface)
 		{
         }
 
@@ -105,7 +105,7 @@ private:
 
 		// Take care to keep this declaration before heap rooted members. Destructors of heap rooted
 		// members have to be called before the runtime destructor.
-		//shared_ptr<ScriptInterface> m_ScriptInterface;
+        shared_ptr<ScriptInterface> m_ScriptInterface;
 
 		JS::PersistentRootedValue m_Obj;
 		std::vector<shared_ptr<ScriptInterface::StructuredClone> > m_Commands;
@@ -117,8 +117,8 @@ private:
 	public:
 		CAIPlayer(CAIWorker& worker, const std::wstring& aiName, player_id_t player, u8 difficulty, const std::wstring& behavior,
 				shared_ptr<ScriptInterface> scriptInterface) :
-			BaseAIPlayer(worker, aiName, player, difficulty, behavior),
-			m_ScriptInterface(scriptInterface), m_Obj(scriptInterface->GetJSRuntime())
+			BaseAIPlayer(worker, aiName, player, difficulty, behavior, scriptInterface),
+			m_Obj(scriptInterface->GetJSRuntime())
 		{
 		}
 
@@ -229,7 +229,7 @@ private:
 
 		// Take care to keep this declaration before heap rooted members. Destructors of heap rooted
 		// members have to be called before the runtime destructor.
-		shared_ptr<ScriptInterface> m_ScriptInterface;
+		//shared_ptr<ScriptInterface> m_ScriptInterface;
 
 		JS::PersistentRootedValue m_Obj;
 		std::vector<shared_ptr<ScriptInterface::StructuredClone> > m_Commands;
@@ -240,8 +240,9 @@ private:
         NONCOPYABLE(PythonAIPlayer);
 
         public:
-        PythonAIPlayer(CAIWorker& worker, const std::wstring& aiName, player_id_t player, u8 difficulty, const std::wstring& behavior) :
-            BaseAIPlayer(worker, aiName, player, difficulty, behavior)
+        PythonAIPlayer(CAIWorker& worker, const std::wstring& aiName, player_id_t player, u8 difficulty, const std::wstring& behavior,
+				shared_ptr<ScriptInterface> scriptInterface) :
+            BaseAIPlayer(worker, aiName, player, difficulty, behavior, scriptInterface)
         {
         }
 
@@ -254,7 +255,7 @@ private:
         void Run(JS::HandleValue state, int playerID)
 		{
             std::cout << "Running python AI Player" << std::endl;
-            // TODO
+            PostCommand("({\"type\": \"aichat\", \"message\": \"test!\"})");
 		}
 
 		// overloaded with a sharedAI part.
@@ -262,13 +263,21 @@ private:
 		void Run(JS::HandleValue state, int playerID, JS::HandleValue SharedAI)
 		{
             std::cout << "Running python AI Player (shared)" << std::endl;
-            // TODO
+            PostCommand("({\"type\": \"aichat\", \"message\": \"Look at me go! Woot, woot!\"})");
 		}
 		void InitAI(JS::HandleValue state, JS::HandleValue SharedAI)
 		{
             std::cout << "initializing python AI Player" << std::endl;
             // TODO
 		}
+
+        void PostCommand(const char* rawCmd)
+        {
+            JSContext* cx = m_ScriptInterface->GetContext();
+            JS::RootedValue cmd(cx);
+			m_ScriptInterface->Eval(rawCmd, &cmd);
+            m_Commands.push_back(m_ScriptInterface->WriteStructuredClone(cmd));
+        }
     };
 
     class RemoteAIPlayer: public CAIPlayer
@@ -604,7 +613,7 @@ public:
             std::cout << ">>> AI Type is " << typeName << std::endl;
             if (typeName.compare(std::string("Python")) == 0)
             {
-                return std::unique_ptr<BaseAIPlayer>(new PythonAIPlayer(*this, aiName, player, difficulty, behavior));
+                return std::unique_ptr<BaseAIPlayer>(new PythonAIPlayer(*this, aiName, player, difficulty, behavior, m_ScriptInterface));
             }
         }
 
