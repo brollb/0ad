@@ -400,7 +400,7 @@ void CSimulation2Impl::Update(int turnLength, const std::vector<SimulationComman
 			ENSURE(m_ComponentManager.ComputeStateHash(primaryStateBefore.hash, false));
 	}
 
-    const bool LOG_TRAJECTORY = true;
+    const bool LOG_TRAJECTORY = false;
     if (LOG_TRAJECTORY) {
         // TODO: Log the state to a file
 

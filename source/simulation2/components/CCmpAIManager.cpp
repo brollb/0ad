@@ -78,13 +78,54 @@ extern void QuitEngine();
 class CAIWorker
 {
 private:
-	class CAIPlayer
+    class BaseAIPlayer
+    {
+		NONCOPYABLE(BaseAIPlayer);
+	public:
+		BaseAIPlayer(CAIWorker& worker, const std::wstring& aiName, player_id_t player, u8 difficulty, const std::wstring& behavior) :
+			m_Worker(worker), m_AIName(aiName), m_Player(player), m_Difficulty(difficulty), m_Behavior(behavior)
+		{
+        }
+
+		bool Initialise()
+        {
+        }
+
+		void Run(JS::HandleValue state, int playerID)
+		{
+		}
+		// overloaded with a sharedAI part.
+		// javascript can handle both natively on the same function.
+		void Run(JS::HandleValue state, int playerID, JS::HandleValue SharedAI)
+		{
+		}
+
+		void InitAI(JS::HandleValue state, JS::HandleValue SharedAI)
+		{
+		}
+
+		CAIWorker& m_Worker;
+		std::wstring m_AIName;
+		player_id_t m_Player;
+		u8 m_Difficulty;
+		std::wstring m_Behavior;
+		bool m_UseSharedComponent;
+
+		// Take care to keep this declaration before heap rooted members. Destructors of heap rooted
+		// members have to be called before the runtime destructor.
+		//shared_ptr<ScriptInterface> m_ScriptInterface;
+
+		JS::PersistentRootedValue m_Obj;
+		std::vector<shared_ptr<ScriptInterface::StructuredClone> > m_Commands;
+	};
+
+	class CAIPlayer : public BaseAIPlayer
 	{
 		NONCOPYABLE(CAIPlayer);
 	public:
 		CAIPlayer(CAIWorker& worker, const std::wstring& aiName, player_id_t player, u8 difficulty, const std::wstring& behavior,
 				shared_ptr<ScriptInterface> scriptInterface) :
-			m_Worker(worker), m_AIName(aiName), m_Player(player), m_Difficulty(difficulty), m_Behavior(behavior),
+			BaseAIPlayer(worker, aiName, player, difficulty, behavior),
 			m_ScriptInterface(scriptInterface), m_Obj(scriptInterface->GetJSRuntime())
 		{
 		}
@@ -99,6 +140,7 @@ private:
 			JSAutoRequest rq(cx);
 
 			OsPath path = L"simulation/ai/" + m_AIName + L"/data.json";
+            // TODO: Add support for a different type of AI?
 			JS::RootedValue metadata(cx);
 			m_Worker.LoadMetadata(path, &metadata);
 			if (metadata.isUndefined())
@@ -186,6 +228,50 @@ private:
 			m_ScriptInterface->CallFunctionVoid(m_Obj, "Init", state, m_Player, SharedAI);
 		}
 
+		//CAIWorker& m_Worker;
+		//std::wstring m_AIName;
+		//player_id_t m_Player;
+		//u8 m_Difficulty;
+		//std::wstring m_Behavior;
+		//bool m_UseSharedComponent;
+
+		// Take care to keep this declaration before heap rooted members. Destructors of heap rooted
+		// members have to be called before the runtime destructor.
+		shared_ptr<ScriptInterface> m_ScriptInterface;
+
+		JS::PersistentRootedValue m_Obj;
+		std::vector<shared_ptr<ScriptInterface::StructuredClone> > m_Commands;
+	};
+
+    class RemoteAIPlayer: CAIPlayer
+    {
+        NONCOPYABLE(RemoteAIPlayer);
+        // TODO: Update the constructor
+        //RemoteAIPlayer(CAIWorker& worker, const std::wstring& aiName, player_id_t player, u8 difficulty, const std::wstring& behavior) :
+            //CAIPlayer(worker, aiName, player, difficulty, behavior)
+        //{
+        //}
+
+		bool Initialise()
+        {
+            // TODO: return false if initialization failed
+            return true;
+        }
+        void Run(JS::HandleValue state, int playerID)
+		{
+            // TODO
+		}
+		// overloaded with a sharedAI part.
+		// javascript can handle both natively on the same function.
+		void Run(JS::HandleValue state, int playerID, JS::HandleValue SharedAI)
+		{
+            // TODO
+		}
+		void InitAI(JS::HandleValue state, JS::HandleValue SharedAI)
+		{
+            // TODO
+		}
+
 		CAIWorker& m_Worker;
 		std::wstring m_AIName;
 		player_id_t m_Player;
@@ -195,11 +281,11 @@ private:
 
 		// Take care to keep this declaration before heap rooted members. Destructors of heap rooted
 		// members have to be called before the runtime destructor.
-		shared_ptr<ScriptInterface> m_ScriptInterface;
+		//shared_ptr<ScriptInterface> m_ScriptInterface;
 
-		JS::PersistentRootedValue m_Obj;
+		//JS::PersistentRootedValue m_Obj;
 		std::vector<shared_ptr<ScriptInterface::StructuredClone> > m_Commands;
-	};
+    };
 
 public:
 	struct SCommandSets
@@ -472,15 +558,25 @@ public:
 
 	bool AddPlayer(const std::wstring& aiName, player_id_t player, u8 difficulty, const std::wstring& behavior)
 	{
-		shared_ptr<CAIPlayer> ai(new CAIPlayer(*this, aiName, player, difficulty, behavior, m_ScriptInterface));
-		if (!ai->Initialise())
-			return false;
+        // TODO: add a new type of AIPlayer which uses cpp
+        // What should it be called???
+        // aiName is something like Petra, etc
 
-		// this will be set to true if we need to load the shared Component.
-		if (!m_HasSharedComponent)
-			m_HasSharedComponent = ai->m_UseSharedComponent;
+        // TODO: Look up the correct AIPlayer type
+        // TODO: Can I print this wstring (aiName)?
+        //if (aiName ==)
+        std::cout << ">>> " << utf8_from_wstring(aiName) << " - " << utf8_from_wstring(behavior) << difficulty << std::endl;
+        shared_ptr<CAIPlayer> ai(new CAIPlayer(*this, aiName, player, difficulty, behavior, m_ScriptInterface));
 
-		m_Players.push_back(ai);
+
+        if (!ai->Initialise())
+            return false;
+
+        // this will be set to true if we need to load the shared Component.
+        if (!m_HasSharedComponent)
+            m_HasSharedComponent = ai->m_UseSharedComponent;
+
+        m_Players.push_back(ai);
 
 		return true;
 	}
@@ -908,7 +1004,7 @@ private:
 	bool m_HasLoadedEntityTemplates;
 
 	std::map<VfsPath, JS::Heap<JS::Value> > m_PlayerMetadata;
-	std::vector<shared_ptr<CAIPlayer> > m_Players; // use shared_ptr just to avoid copying
+	std::vector<shared_ptr<BaseAIPlayer> > m_Players; // use shared_ptr just to avoid copying
 
 	bool m_HasSharedComponent;
 	JS::PersistentRootedValue m_SharedAIObj;
