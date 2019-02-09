@@ -84,5 +84,7 @@ JS::Value ICmpAIManager::GetAIs(const ScriptInterface& scriptInterface)
 {
 	GetAIsHelper helper(scriptInterface);
 	helper.Run();
+    std::cout << "ais: " << JS::ObjectValue(*helper.m_AIs) << std::endl;
+    // TODO: How can I add another value to this list?
 	return JS::ObjectValue(*helper.m_AIs);
 }
