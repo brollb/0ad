@@ -717,6 +717,18 @@ extern_lib_defs = {
 			})
 		end,
 	},
+	python = {
+		compile_settings = function()
+			if os.istarget("windows") then
+            add_default_include_paths("python3")
+			else
+				pkgconfig.add_includes("python3")
+			end
+		end,
+		link_settings = function()
+            add_default_lib_paths("python3")
+        end
+    }
 }
 
 

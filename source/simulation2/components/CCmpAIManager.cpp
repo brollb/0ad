@@ -45,7 +45,7 @@
 #include "simulation2/serialization/StdSerializer.h"
 #include "simulation2/serialization/SerializeTemplates.h"
 
-// #include <Python.h>  // TODO: Add Python!
+#include <Python.h>
 
 extern void QuitEngine();
 

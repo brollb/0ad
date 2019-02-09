@@ -676,6 +676,7 @@ function setup_all_libs ()
 	extern_libs = {
 		"boost",
 		"opengl",
+        "python",
 		"spidermonkey",
 	}
 	setup_static_lib_project("simulation2", source_dirs, extern_libs, {})
