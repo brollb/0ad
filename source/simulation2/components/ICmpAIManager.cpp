@@ -49,7 +49,24 @@ public:
 	void Run()
 	{
 		vfs::ForEachFile(g_VFS, L"simulation/ai/", Callback, (uintptr_t)this, L"*.json", vfs::DIR_RECURSIVE);
+        AddBuiltInAIs();
 	}
+
+	void AddBuiltInAIs()
+    {
+        // TODO: Create a new AI to add to m_AIs
+		JSContext* cx = this->m_ScriptInterface.GetContext();
+		//JSAutoRequest rq(cx);
+		u32 length;
+		JS_GetArrayLength(cx, this->m_AIs, &length);
+
+        // Should I expose this as other types of AIs in the data.json??
+        // This definitely makes sense for the python AIs... What about remote AIs?
+		JS::RootedValue ai(cx);
+		this->m_ScriptInterface.Eval("({\"id\": \"CPPAIPlayer\", \"data\": {\"name\": \"CPPAIPlayer\", \"description\": \"test\", \"useShared\": true}})", &ai);
+		JS_SetElement(cx, this->m_AIs, length, ai);
+        std::cout << ">>> ai length: " << length << std::endl;
+    }
 
 	static Status Callback(const VfsPath& pathname, const CFileInfo& UNUSED(fileInfo), const uintptr_t cbData)
 	{
@@ -66,9 +83,11 @@ public:
 		JS::RootedValue ai(cx);
 		JS::RootedValue data(cx);
 		self->m_ScriptInterface.ReadJSONFile(pathname, &data);
+        // Maybe these should just be more options in the 
 		self->m_ScriptInterface.Eval("({})", &ai);
 		self->m_ScriptInterface.SetProperty(ai, "id", dirname, true);
 		self->m_ScriptInterface.SetProperty(ai, "data", data, true);
+
 		u32 length;
 		JS_GetArrayLength(cx, self->m_AIs, &length);
 		JS_SetElement(cx, self->m_AIs, length, ai);
@@ -84,7 +103,6 @@ JS::Value ICmpAIManager::GetAIs(const ScriptInterface& scriptInterface)
 {
 	GetAIsHelper helper(scriptInterface);
 	helper.Run();
-    std::cout << "ais: " << JS::ObjectValue(*helper.m_AIs) << std::endl;
-    // TODO: How can I add another value to this list?
+    //std::cout << "ais: " << JS::ObjectValue(*helper.m_AIs) << std::endl;
 	return JS::ObjectValue(*helper.m_AIs);
 }

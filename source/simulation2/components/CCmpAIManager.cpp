@@ -45,6 +45,8 @@
 #include "simulation2/serialization/StdSerializer.h"
 #include "simulation2/serialization/SerializeTemplates.h"
 
+// #include <Python.h>  // TODO: Add Python!
+
 extern void QuitEngine();
 
 /**
@@ -87,22 +89,12 @@ private:
 		{
         }
 
-		bool Initialise()
-        {
-        }
-
-		void Run(JS::HandleValue state, int playerID)
-		{
-		}
+		virtual bool Initialise() = 0;
+		virtual void Run(JS::HandleValue state, int playerID) = 0;
 		// overloaded with a sharedAI part.
 		// javascript can handle both natively on the same function.
-		void Run(JS::HandleValue state, int playerID, JS::HandleValue SharedAI)
-		{
-		}
-
-		void InitAI(JS::HandleValue state, JS::HandleValue SharedAI)
-		{
-		}
+		virtual void Run(JS::HandleValue state, int playerID, JS::HandleValue SharedAI) = 0;
+		virtual void InitAI(JS::HandleValue state, JS::HandleValue SharedAI) = 0;
 
 		CAIWorker& m_Worker;
 		std::wstring m_AIName;
@@ -243,7 +235,43 @@ private:
 		std::vector<shared_ptr<ScriptInterface::StructuredClone> > m_Commands;
 	};
 
-    class RemoteAIPlayer: CAIPlayer
+    class PythonAIPlayer: public BaseAIPlayer
+    {
+        NONCOPYABLE(PythonAIPlayer);
+
+        public:
+        PythonAIPlayer(CAIWorker& worker, const std::wstring& aiName, player_id_t player, u8 difficulty, const std::wstring& behavior) :
+            BaseAIPlayer(worker, aiName, player, difficulty, behavior)
+        {
+        }
+
+		bool Initialise()
+        {
+            m_UseSharedComponent = true;
+            return true;
+        }
+
+        void Run(JS::HandleValue state, int playerID)
+		{
+            std::cout << "Running python AI Player" << std::endl;
+            // TODO
+		}
+
+		// overloaded with a sharedAI part.
+		// javascript can handle both natively on the same function.
+		void Run(JS::HandleValue state, int playerID, JS::HandleValue SharedAI)
+		{
+            std::cout << "Running python AI Player (shared)" << std::endl;
+            // TODO
+		}
+		void InitAI(JS::HandleValue state, JS::HandleValue SharedAI)
+		{
+            std::cout << "initializing python AI Player" << std::endl;
+            // TODO
+		}
+    };
+
+    class RemoteAIPlayer: public CAIPlayer
     {
         NONCOPYABLE(RemoteAIPlayer);
         // TODO: Update the constructor
@@ -255,6 +283,7 @@ private:
 		bool Initialise()
         {
             // TODO: return false if initialization failed
+            m_UseSharedComponent = true;
             return true;
         }
         void Run(JS::HandleValue state, int playerID)
@@ -556,19 +585,45 @@ public:
 		return true;
 	}
 
+    std::unique_ptr<BaseAIPlayer> GetPlayer(const std::wstring& aiName, player_id_t player, u8 difficulty, const std::wstring& behavior)
+    {
+        JSContext* cx = m_ScriptInterface->GetContext();
+        JSAutoRequest rq(cx);
+
+        OsPath path = L"simulation/ai/" + aiName + L"/data.json";
+        JS::RootedValue metadata(cx);
+        this->LoadMetadata(path, &metadata);
+
+        // Get the type from the metadata
+        std::cout << ">>> About to get the player AI" << std::endl;
+        if (!metadata.isUndefined() && m_ScriptInterface->HasProperty(metadata, "type"))
+        {
+            std::string typeName;
+			m_ScriptInterface->GetProperty(metadata, "type", typeName);
+        std::cout << ">>> About to print the AI type" << std::endl;
+            std::cout << ">>> AI Type is " << typeName << std::endl;
+            if (typeName.compare(std::string("Python")) == 0)
+            {
+                return std::unique_ptr<BaseAIPlayer>(new PythonAIPlayer(*this, aiName, player, difficulty, behavior));
+            }
+        }
+
+        std::cout << ">>> Getting the CAIPlayer" << std::endl;
+        return std::unique_ptr<BaseAIPlayer>(new CAIPlayer(*this, aiName, player, difficulty, behavior, m_ScriptInterface));
+    }
+
 	bool AddPlayer(const std::wstring& aiName, player_id_t player, u8 difficulty, const std::wstring& behavior)
 	{
         // TODO: add a new type of AIPlayer which uses cpp
         // What should it be called???
         // aiName is something like Petra, etc
 
-        // TODO: Look up the correct AIPlayer type
-        // TODO: Can I print this wstring (aiName)?
-        //if (aiName ==)
         std::cout << ">>> " << utf8_from_wstring(aiName) << " - " << utf8_from_wstring(behavior) << difficulty << std::endl;
-        shared_ptr<CAIPlayer> ai(new CAIPlayer(*this, aiName, player, difficulty, behavior, m_ScriptInterface));
 
+        // Look up the type of the given aiName
+        std::shared_ptr<BaseAIPlayer> ai = std::move(GetPlayer(aiName, player, difficulty, behavior));
 
+        std::cout << ">>> About to initialize" << std::endl;
         if (!ai->Initialise())
             return false;
 
@@ -576,6 +631,7 @@ public:
         if (!m_HasSharedComponent)
             m_HasSharedComponent = ai->m_UseSharedComponent;
 
+        std::cout << ">>> adding to m_Players" << std::endl;
         m_Players.push_back(ai);
 
 		return true;
