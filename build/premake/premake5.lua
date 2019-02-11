@@ -906,6 +906,7 @@ used_extern_libs = {
 	"zlib",
 
 	"spidermonkey",
+	"python",
 	"libxml2",
 
 	"boost",
