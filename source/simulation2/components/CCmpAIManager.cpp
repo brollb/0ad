@@ -246,16 +246,70 @@ private:
         {
         }
 
+        ~PythonAIPlayer() {
+            delete pModule;
+            delete pDict;
+            delete pInitFn;
+        }
+
 		bool Initialise()
         {
-            m_UseSharedComponent = true;
+            PyObject *pName, *pValue;
+
+            // Build the name object
+            std::cout << ">>> 1" << std::endl;
+            // TODO: use aiName instead
+            pName = PyUnicode_FromString((char*)"python_agent.python_agent");
+
+            // Load the module object
+            printf("initializing python agent..\n");
+            //std::cout << "getting module.." << std::endl;
+            pModule = PyImport_Import(pName);
+
+
+            // pDict is a borrowed reference 
+            printf("getting dict..\n");
+            pDict = PyModule_GetDict(pModule);
+
+
+            // pInitFn is also a borrowed reference 
+            std::cout << ">>> 2" << std::endl;
+            pInitFn = PyDict_GetItemString(pDict, (char*)"init");
+
+            std::cout << ">>> 3" << std::endl;
+            if (PyCallable_Check(pInitFn))
+            {
+                std::cout << ">>> 4" << std::endl;
+                pValue = Py_BuildValue("(z)",(char*)"something");
+                PyErr_Print();
+                printf("Let's give this a shot!\n");
+                std::cout << ">>> 5" << std::endl;
+                PyObject_CallObject(pInitFn, pValue);
+                std::cout << ">>> 6" << std::endl;
+                PyErr_Print();
+                //delete presult;
+            } else 
+            {
+                PyErr_Print();
+            }
+            std::cout << ">>> 8" << std::endl;
+            Py_DECREF(pValue);
+
+            // Clean up
+            std::cout << ">>> 9" << std::endl;
+            Py_DECREF(pModule);
+            std::cout << ">>> 10" << std::endl;
+            Py_DECREF(pName);
+            std::cout << ">>> 11" << std::endl;
+
+            m_UseSharedComponent = false;
             return true;
         }
 
         void Run(JS::HandleValue state, int playerID)
 		{
             std::cout << "Running python AI Player" << std::endl;
-            PostCommand("({\"type\": \"aichat\", \"message\": \"test!\"})");
+            //PostCommand("({\"type\": \"aichat\", \"message\": \"test!\"})");
 		}
 
 		// overloaded with a sharedAI part.
@@ -278,6 +332,10 @@ private:
 			m_ScriptInterface->Eval(rawCmd, &cmd);
             m_Commands.push_back(m_ScriptInterface->WriteStructuredClone(cmd));
         }
+
+        //private:
+        //std::unique_ptr<PyObject> pDict;
+        PyObject *pModule, *pDict, *pInitFn;
     };
 
     class RemoteAIPlayer: public CAIPlayer
@@ -481,6 +539,8 @@ public:
 	static void ExitProgram(ScriptInterface::CxPrivate* UNUSED(pCxPrivate))
 	{
 		QuitEngine();
+        std::cout << "------- PY FINALIZE -------" << std::endl;
+        Py_Finalize();
 	}
 
 	/**
@@ -1103,6 +1163,9 @@ class CCmpAIManager : public ICmpAIManager
 public:
 	static void ClassInit(CComponentManager& UNUSED(componentManager))
 	{
+        std::cout << "------------- Init Py -------------" << std::endl;
+        setenv("PYTHONPATH","/home/irishninja/projektek/0ad/binaries/data/mods/public/simulation/ai/",1);  // How can I get this value properly??
+        Py_Initialize();  // TODO: Is this a problem to call multiple times??
 	}
 
 	DEFAULT_COMPONENT_ALLOCATOR(AIManager)
