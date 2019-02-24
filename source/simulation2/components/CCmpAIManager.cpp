@@ -247,9 +247,26 @@ private:
         }
 
         ~PythonAIPlayer() {
+            Py_DECREF(pModule);
             delete pModule;
             delete pDict;
             delete pInitFn;
+        }
+
+		std::unique_ptr<char[]> GetPyModuleName()
+        {
+            std::wcout << L"m_AIName: " << m_AIName << std::endl;
+            std::wstring mod_name = m_AIName;  // [2*m_AIName.length()+1];
+            mod_name.push_back('.');
+            mod_name.append(m_AIName);
+
+            std::wcout << L"module name is " << mod_name << std::endl;
+
+            size_t len = mod_name.length()+1;
+            std::unique_ptr<char[]> mod_name_s(new char[len]);
+            wcstombs(mod_name_s.get(), mod_name.c_str(), len);
+
+            return mod_name_s;
         }
 
 		bool Initialise()
@@ -258,29 +275,28 @@ private:
 
             // Build the name object
             std::cout << ">>> 1" << std::endl;
-            // TODO: use aiName instead
-            pName = PyUnicode_FromString((char*)"python_agent.python_agent");
+            auto mod_name_s = this->GetPyModuleName();
+            std::cout << "about to load " << mod_name_s.get() << std::endl;
+            pName = PyUnicode_FromString((char *) mod_name_s.get());
 
             // Load the module object
             printf("initializing python agent..\n");
-            //std::cout << "getting module.." << std::endl;
             pModule = PyImport_Import(pName);
-
 
             // pDict is a borrowed reference 
             printf("getting dict..\n");
             pDict = PyModule_GetDict(pModule);
 
-
             // pInitFn is also a borrowed reference 
             std::cout << ">>> 2" << std::endl;
             pInitFn = PyDict_GetItemString(pDict, (char*)"init");
+            pMsgFn = PyDict_GetItemString(pDict, (char*)"handle_message");
 
             std::cout << ">>> 3" << std::endl;
             if (PyCallable_Check(pInitFn))
             {
                 std::cout << ">>> 4" << std::endl;
-                pValue = Py_BuildValue("(z)",(char*)"something");
+                pValue = Py_BuildValue("(i)", m_Player);
                 PyErr_Print();
                 printf("Let's give this a shot!\n");
                 std::cout << ">>> 5" << std::endl;
@@ -294,22 +310,31 @@ private:
             }
             std::cout << ">>> 8" << std::endl;
             Py_DECREF(pValue);
-
-            // Clean up
-            std::cout << ">>> 9" << std::endl;
-            Py_DECREF(pModule);
-            std::cout << ">>> 10" << std::endl;
             Py_DECREF(pName);
             std::cout << ">>> 11" << std::endl;
 
+            std::cout << ">>> INIT COMPLETE!!!!" << std::endl;
             m_UseSharedComponent = false;
             return true;
         }
 
         void Run(JS::HandleValue state, int playerID)
 		{
-            std::cout << "Running python AI Player" << std::endl;
+            printf("Running python AI Player\n");
             //PostCommand("({\"type\": \"aichat\", \"message\": \"test!\"})");
+            if (PyCallable_Check(pMsgFn))
+            {
+                std::cout << "pMsgFn callable" << std::endl;
+                // TODO: How to build the python dict
+                PyObject *pValue = Py_BuildValue("(z)",(char*)"make_me_an_obs_dict");
+                PyObject_CallObject(pMsgFn, pValue);
+                // TODO: Expose a method to make actions
+            }
+            else
+            {
+                std::cout << "pMsgFn not callable?" << std::endl;
+            }
+            std::cout << pMsgFn << std::endl;
 		}
 
 		// overloaded with a sharedAI part.
@@ -336,6 +361,7 @@ private:
         //private:
         //std::unique_ptr<PyObject> pDict;
         PyObject *pModule, *pDict, *pInitFn;
+        PyObject *pMsgFn;
     };
 
     class RemoteAIPlayer: public CAIPlayer
