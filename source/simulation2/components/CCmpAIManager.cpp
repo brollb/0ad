@@ -364,51 +364,6 @@ private:
         PyObject *pMsgFn;
     };
 
-    class RemoteAIPlayer: public CAIPlayer
-    {
-        NONCOPYABLE(RemoteAIPlayer);
-        // TODO: Update the constructor
-        //RemoteAIPlayer(CAIWorker& worker, const std::wstring& aiName, player_id_t player, u8 difficulty, const std::wstring& behavior) :
-            //CAIPlayer(worker, aiName, player, difficulty, behavior)
-        //{
-        //}
-
-		bool Initialise()
-        {
-            // TODO: return false if initialization failed
-            m_UseSharedComponent = true;
-            return true;
-        }
-        void Run(JS::HandleValue state, int playerID)
-		{
-            // TODO
-		}
-		// overloaded with a sharedAI part.
-		// javascript can handle both natively on the same function.
-		void Run(JS::HandleValue state, int playerID, JS::HandleValue SharedAI)
-		{
-            // TODO
-		}
-		void InitAI(JS::HandleValue state, JS::HandleValue SharedAI)
-		{
-            // TODO
-		}
-
-		CAIWorker& m_Worker;
-		std::wstring m_AIName;
-		player_id_t m_Player;
-		u8 m_Difficulty;
-		std::wstring m_Behavior;
-		bool m_UseSharedComponent;
-
-		// Take care to keep this declaration before heap rooted members. Destructors of heap rooted
-		// members have to be called before the runtime destructor.
-		//shared_ptr<ScriptInterface> m_ScriptInterface;
-
-		//JS::PersistentRootedValue m_Obj;
-		std::vector<shared_ptr<ScriptInterface::StructuredClone> > m_Commands;
-    };
-
 public:
 	struct SCommandSets
 	{
