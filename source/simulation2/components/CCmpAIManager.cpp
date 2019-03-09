@@ -220,13 +220,6 @@ private:
 			m_ScriptInterface->CallFunctionVoid(m_Obj, "Init", state, m_Player, SharedAI);
 		}
 
-		//CAIWorker& m_Worker;
-		//std::wstring m_AIName;
-		//player_id_t m_Player;
-		//u8 m_Difficulty;
-		//std::wstring m_Behavior;
-		//bool m_UseSharedComponent;
-
 		// Take care to keep this declaration before heap rooted members. Destructors of heap rooted
 		// members have to be called before the runtime destructor.
 		//shared_ptr<ScriptInterface> m_ScriptInterface;
@@ -318,16 +311,126 @@ private:
             return true;
         }
 
+        //std::unique_ptr<JS::HandleValueArray> ObjectKeys(JS::HandleValue js_obj)
+        //JS::HandleValueArray ObjectKeys(JS::HandleValue js_obj)
+        //{
+            //JSContext* cx(m_ScriptInterface->GetContext());
+            //JS::RootedValue js_object(cx);
+            //m_ScriptInterface->Eval("(Object)", &js_object);
+            ////std::unique_ptr<JS::HandleValueArray> keys(JS::HandleValueArray::empty());
+            //JS::HandleValueArray keys = JS::HandleValueArray::empty();
+            ////JS::HandleValueArray* keys = JS::HandleValueArray::empty();
+            //JS::HandleValueArray args(js_obj);
+            //std::cout << "Calling object.keys" << std::endl;
+            //m_ScriptInterface->CallFunction(js_object, "keys", args, keys);
+
+            //return keys;
+        //}
+
+        PyObject* ConvertJSToPython(JS::HandleValue state)
+        {
+            JSContext* cx(m_ScriptInterface->GetContext());
+
+            if (state.isObject() && JS_IsArrayObject(cx, state))
+            {
+                uint32_t length = 0;
+                JS::RootedObject array(cx, nullptr);
+                array = &state.toObject();
+                JS_GetArrayLength(cx, array, &length);
+
+                PyObject* list = PyList_New(length);
+
+                for (size_t i = 0; i < length; ++i)
+                {
+                    JS::RootedValue jskey(cx);
+                    JS_GetElement(cx, array, i, &jskey);
+                    PyObject* element = ConvertJSToPython(jskey);
+
+                    PyList_SetItem(list, i, element);
+                }
+
+                return list;
+            }
+            else if (state.isObject())
+            {
+                PyObject* d = PyDict_New();
+
+                // Get the keys of the object
+                JS::RootedValue js_object(cx);
+                m_ScriptInterface->Eval("(Object)", &js_object);
+                JS::RootedValue ret(cx);
+                m_ScriptInterface->CallFunction(js_object, "keys", &ret, state);
+                JS::RootedObject keys(cx, nullptr);
+                keys = &ret.toObject();
+
+                // Iterate over the keys and build the python dict
+                uint32_t length = 0;
+                JS_GetArrayLength(cx, keys, &length);
+                for (size_t i = 0; i < length; ++i)
+                {
+                    std::string key;
+                    JS::RootedValue jskey(cx);
+                    JS_GetElement(cx, keys, i, &jskey);
+                    m_ScriptInterface->FromJSVal(cx, jskey, key);
+                    JS::RootedValue js_val(cx);
+                    m_ScriptInterface->GetProperty(state, key.c_str(), &js_val);
+                    PyDict_SetItem(d, ConvertJSToPython(jskey), ConvertJSToPython(js_val));
+                }
+
+                return d;
+            }
+            else if (state.isString())
+            {
+                std::string value;
+                m_ScriptInterface->FromJSVal(cx, state, value);
+                return Py_BuildValue("(i)", value);
+            }
+            else if (state.isInt32())
+            {
+                int32_t value;
+                m_ScriptInterface->FromJSVal(cx, state, value);
+
+                return Py_BuildValue("(i)", value);
+            }
+            else if (state.isNumber())
+            {
+                double value;
+                m_ScriptInterface->FromJSVal(cx, state, value);
+
+                return Py_BuildValue("(d)", value);
+            }
+            else if (state.isBoolean())
+            {
+                bool value;
+                m_ScriptInterface->FromJSVal(cx, state, value);
+                return Py_BuildValue("[i]", value);
+            }
+            else if (state.isNullOrUndefined())
+            {
+                return Py_None;
+            }
+            else
+            {
+                std::cout << "Received unsupported type. Defaulting to None." << std::endl;
+                return Py_None;
+            }
+        }
+
         void Run(JS::HandleValue state, int playerID)
 		{
             printf("Running python AI Player\n");
             //PostCommand("({\"type\": \"aichat\", \"message\": \"test!\"})");
+
             if (PyCallable_Check(pMsgFn))
             {
-                std::cout << "pMsgFn callable" << std::endl;
-                // TODO: How to build the python dict
-                PyObject *pValue = Py_BuildValue("(z)",(char*)"make_me_an_obs_dict");
+                // TODO: How to build the python dict??
+                //JS::RootedValue state_v = (RootedValue) state;
+                //auto stateStr = m_ScriptInterface->StringifyJSON(&state, false);
+                //PyObject *pValue = Py_BuildValue("(z)", (char*)stateStr);
+                std::cout << "converting state to python..." << std::endl;
+                PyObject *pValue = ConvertJSToPython(state);
                 PyObject_CallObject(pMsgFn, pValue);
+                std::cout << "DONE converting state to python..." << std::endl;
                 // TODO: Expose a method to make actions
             }
             else
@@ -359,7 +462,6 @@ private:
         }
 
         //private:
-        //std::unique_ptr<PyObject> pDict;
         PyObject *pModule, *pDict, *pInitFn;
         PyObject *pMsgFn;
     };
@@ -1085,6 +1187,9 @@ private:
 			m_ScriptInterface->CallFunctionVoid(m_SharedAIObj, "onUpdate", state);
 		}
 
+        //auto stateStr = m_ScriptInterface->StringifyJSON(&state, false);
+        //std::cout << stateStr << std::endl;
+        //TestStringify(&state);
 		for (size_t i = 0; i < m_Players.size(); ++i)
 		{
 			PROFILE3("AI script");
@@ -1097,6 +1202,13 @@ private:
 				m_Players[i]->Run(state, m_Players[i]->m_Player);
 		}
 	}
+
+    void TestStringify(JS::MutableHandleValue state)
+    {
+        std::cout << "testing stringify" << std::endl;
+        auto stateStr = m_ScriptInterface->StringifyJSON(state, false);
+        std::cout << stateStr << std::endl;
+    }
 
 	// Take care to keep this declaration before heap rooted members. Destructors of heap rooted
 	// members have to be called before the runtime destructor.
