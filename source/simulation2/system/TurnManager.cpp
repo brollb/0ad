@@ -25,6 +25,7 @@
 #include "ps/Replay.h"
 #include "ps/Util.h"
 #include "scriptinterface/ScriptInterface.h"
+#include "simulation2/components/ICmpAIInterface.h"
 #include "simulation2/Simulation2.h"
 
 const u32 DEFAULT_TURN_LENGTH_MP = 500;
@@ -50,6 +51,8 @@ CTurnManager::CTurnManager(CSimulation2& simulation, u32 defaultTurnLength, int 
 	// So they can be sending us commands scheduled for n+1, n+2, n+3.
 	// So we need a 3-element buffer:
 	m_QueuedCommands.resize(COMMAND_DELAY + 1);
+    auto m_Directory = m_Replay.GetDirectory();
+    m_StateStream = new std::ofstream(OsString(m_Directory / L"states.txt").c_str(), std::ofstream::out | std::ofstream::trunc);
 }
 
 void CTurnManager::ResetState(u32 newCurrentTurn, u32 newReadyTurn)
@@ -157,6 +160,22 @@ bool CTurnManager::Update(float simFrameLength, size_t maxTurns)
 		m_QueuedCommands.resize(m_QueuedCommands.size() + 1);
 
 		m_Replay.Turn(m_CurrentTurn-1, m_TurnLength, commands);
+        // TODO: Check the cli args?? Maybe from the config??
+        // Log the game state
+        CmpPtr<ICmpAIInterface> cmpAIInterface(m_Simulation2.GetSimContext().GetSystemEntity());
+        const ScriptInterface& scriptInterface = m_Simulation2.GetScriptInterface();
+        JSContext* cx = scriptInterface.GetContext();
+        JS::RootedValue state(cx);
+        cmpAIInterface->GetFullRepresentation(&state, true);
+        std::cout << m_CurrentTurn-1 << " " << scriptInterface.StringifyJSON(&state, false) << std::endl;
+
+		//JSContext* cx = scriptInterface.GetContext();
+		//JS::RootedValue state(cx);
+        //m_Simulation2.GetSystemEntity()->GetFullRepresentation(&state, false);
+        //auto stateStr = scriptInterface->StringifyJSON(&state, false);
+        //std::cout << "Writing state to file!!!" << "\n";
+
+        //*m_StateStream << m_CurrentTurn-1 << " " << scriptInterface.StringifyJSON(&state, false) << "\n";
 
 		NETTURN_LOG("Running %d cmds\n", commands.size());
 
