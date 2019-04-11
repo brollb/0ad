@@ -408,7 +408,7 @@ void CSimulation2Impl::Update(int turnLength, const std::vector<SimulationComman
         JSContext* cx = scriptInterface.GetContext();
 		JS::RootedValue state(cx);
 		cmpAIInterface->GetFullRepresentation(&state, true);
-        std::cout << "State: " << scriptInterface.StringifyJSON(&state, false) << std::endl;
+        std::cout << m_TurnNumber << " " << scriptInterface.StringifyJSON(&state, false) << std::endl;
     }
 
 	UpdateComponents(m_SimContext, turnLengthFixed, commands);
