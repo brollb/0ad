@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+service RLAPI {
+    rpc Step(Actions) returns (Observation) {}
+    rpc Reset(ResetRequest) returns (Observation) {}
+    rpc Connect(ConnectRequest) returns (Observation) {}
+}
+
+message Actions {
+    repeated Action actions = 1;
+}
+
+message Action {
+    string content = 1;
+}
+
+message Observation {
+    string content = 1;
+}
+
+message ResetRequest {
+    string map = 1;
+}
+
+message ConnectRequest {
+    string map = 1;
+}

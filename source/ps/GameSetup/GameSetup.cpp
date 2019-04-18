@@ -995,7 +995,9 @@ void InitGraphics(const CmdLineArgs& args, int flags, const std::vector<CStr>& i
 		InitSDL();
 
 		if (!g_VideoMode.InitSDL())
+        {
 			throw PSERROR_System_VmodeFailed(); // abort startup
+        }
 	}
 
 	RunHardwareDetection();
