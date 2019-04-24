@@ -400,15 +400,13 @@ void CSimulation2Impl::Update(int turnLength, const std::vector<SimulationComman
 			ENSURE(m_ComponentManager.ComputeStateHash(primaryStateBefore.hash, false));
 	}
 
-    const bool LOG_STATES = g_args.Has("log-states");
-    if (LOG_STATES) {
-        // TODO: Log the state to a file
-
+	const bool LOG_STATES = g_args.Has("log-states");
+	if (LOG_STATES) {
 		CmpPtr<ICmpAIInterface> cmpAIInterface(m_SimContext.GetSystemEntity());
-        JSContext* cx = scriptInterface.GetContext();
+		JSContext* cx = scriptInterface.GetContext();
 		JS::RootedValue state(cx);
 		cmpAIInterface->GetFullRepresentation(&state, true);
-        std::cout << "state " << m_TurnNumber << " " << scriptInterface.StringifyJSON(&state, false) << std::endl;
+		std::cout << "state " << m_TurnNumber << " " << scriptInterface.StringifyJSON(&state, false) << std::endl;
     }
 
 	UpdateComponents(m_SimContext, turnLengthFixed, commands);
