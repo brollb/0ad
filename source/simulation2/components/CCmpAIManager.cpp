@@ -45,6 +45,10 @@
 #include "simulation2/serialization/StdSerializer.h"
 #include "simulation2/serialization/SerializeTemplates.h"
 
+#include <Python.h>
+#include <chrono>
+#include <ctime> 
+
 extern void QuitEngine();
 
 /**
@@ -78,14 +82,47 @@ extern void QuitEngine();
 class CAIWorker
 {
 private:
-	class CAIPlayer
+    class BaseAIPlayer
+    {
+		NONCOPYABLE(BaseAIPlayer);
+	public:
+		BaseAIPlayer(CAIWorker& worker, const std::wstring& aiName, player_id_t player, u8 difficulty, const std::wstring& behavior, shared_ptr<ScriptInterface> scriptInterface) :
+			m_Worker(worker), m_AIName(aiName), m_Player(player), m_Difficulty(difficulty), m_Behavior(behavior), m_ScriptInterface(scriptInterface)
+		{
+        }
+
+		virtual bool Initialise() = 0;
+		virtual void Run(JS::HandleValue state, int playerID) = 0;
+		virtual void Run(std::string state, int playerID) = 0;
+		// overloaded with a sharedAI part.
+		// javascript can handle both natively on the same function.
+		virtual void Run(JS::HandleValue state, int playerID, JS::HandleValue SharedAI) = 0;
+		virtual void InitAI(JS::HandleValue state, JS::HandleValue SharedAI) = 0;
+
+		CAIWorker& m_Worker;
+		std::wstring m_AIName;
+		player_id_t m_Player;
+		u8 m_Difficulty;
+		std::wstring m_Behavior;
+		bool m_UseSharedComponent;
+        bool m_UseStateJSON = false;
+
+		// Take care to keep this declaration before heap rooted members. Destructors of heap rooted
+		// members have to be called before the runtime destructor.
+        shared_ptr<ScriptInterface> m_ScriptInterface;
+
+		JS::PersistentRootedValue m_Obj;
+		std::vector<shared_ptr<ScriptInterface::StructuredClone> > m_Commands;
+	};
+
+	class CAIPlayer : public BaseAIPlayer
 	{
 		NONCOPYABLE(CAIPlayer);
 	public:
 		CAIPlayer(CAIWorker& worker, const std::wstring& aiName, player_id_t player, u8 difficulty, const std::wstring& behavior,
 				shared_ptr<ScriptInterface> scriptInterface) :
-			m_Worker(worker), m_AIName(aiName), m_Player(player), m_Difficulty(difficulty), m_Behavior(behavior),
-			m_ScriptInterface(scriptInterface), m_Obj(scriptInterface->GetJSRuntime())
+			BaseAIPlayer(worker, aiName, player, difficulty, behavior, scriptInterface),
+			m_Obj(scriptInterface->GetJSRuntime())
 		{
 		}
 
@@ -99,6 +136,7 @@ private:
 			JSAutoRequest rq(cx);
 
 			OsPath path = L"simulation/ai/" + m_AIName + L"/data.json";
+            // TODO: Add support for a different type of AI?
 			JS::RootedValue metadata(cx);
 			m_Worker.LoadMetadata(path, &metadata);
 			if (metadata.isUndefined())
@@ -168,6 +206,10 @@ private:
 			return true;
 		}
 
+        void Run(std::string state, int playerID)
+        {
+        }
+
 		void Run(JS::HandleValue state, int playerID)
 		{
 			m_Commands.clear();
@@ -186,20 +228,309 @@ private:
 			m_ScriptInterface->CallFunctionVoid(m_Obj, "Init", state, m_Player, SharedAI);
 		}
 
-		CAIWorker& m_Worker;
-		std::wstring m_AIName;
-		player_id_t m_Player;
-		u8 m_Difficulty;
-		std::wstring m_Behavior;
-		bool m_UseSharedComponent;
-
 		// Take care to keep this declaration before heap rooted members. Destructors of heap rooted
 		// members have to be called before the runtime destructor.
-		shared_ptr<ScriptInterface> m_ScriptInterface;
+		//shared_ptr<ScriptInterface> m_ScriptInterface;
 
 		JS::PersistentRootedValue m_Obj;
 		std::vector<shared_ptr<ScriptInterface::StructuredClone> > m_Commands;
 	};
+
+    class PythonAIPlayer: public BaseAIPlayer
+    {
+        NONCOPYABLE(PythonAIPlayer);
+
+        public:
+        PythonAIPlayer(CAIWorker& worker, const std::wstring& aiName, player_id_t player, u8 difficulty, const std::wstring& behavior,
+				shared_ptr<ScriptInterface> scriptInterface) :
+            BaseAIPlayer(worker, aiName, player, difficulty, behavior, scriptInterface)
+        {
+        }
+
+        ~PythonAIPlayer() {
+            Py_DECREF(pModule);
+            delete pModule;
+            delete pDict;
+            delete pInitFn;
+        }
+
+		std::unique_ptr<char[]> GetPyModuleName()
+        {
+            std::wcout << L"m_AIName: " << m_AIName << std::endl;
+            std::wstring mod_name = m_AIName;  // [2*m_AIName.length()+1];
+            mod_name.push_back('.');
+            mod_name.append(m_AIName);
+
+            std::wcout << L"module name is " << mod_name << std::endl;
+
+            size_t len = mod_name.length()+1;
+            std::unique_ptr<char[]> mod_name_s(new char[len]);
+            wcstombs(mod_name_s.get(), mod_name.c_str(), len);
+
+            return mod_name_s;
+        }
+
+		bool Initialise()
+        {
+            PyObject *pName, *pValue;
+
+            // Build the name object
+            auto mod_name_s = this->GetPyModuleName();
+            pName = PyUnicode_FromString((char *) mod_name_s.get());
+
+            // Load the module object
+            printf("initializing python agent..\n");
+            pModule = PyImport_Import(pName);
+
+            // pDict is a borrowed reference 
+            printf("getting dict..\n");
+            pDict = PyModule_GetDict(pModule);
+
+            // pInitFn is also a borrowed reference 
+            pInitFn = PyDict_GetItemString(pDict, (char*)"init");
+            pMsgFn = PyDict_GetItemString(pDict, (char*)"handle_message");
+
+            if (PyCallable_Check(pInitFn))
+            {
+                pValue = Py_BuildValue("(i)", m_Player);
+                PyErr_Print();
+                printf("Let's give this a shot!\n");
+                PyObject_CallObject(pInitFn, pValue);
+                PyErr_Print();
+                //delete presult;
+            } else 
+            {
+                PyErr_Print();
+            }
+            Py_DECREF(pValue);
+            Py_DECREF(pName);
+
+            std::cout << ">>> INIT COMPLETE!!!!" << std::endl;
+            m_UseSharedComponent = false;
+            m_UseStateJSON = false;
+            return true;
+        }
+
+        //std::unique_ptr<JS::HandleValueArray> ObjectKeys(JS::HandleValue js_obj)
+        //JS::HandleValueArray ObjectKeys(JS::HandleValue js_obj)
+        //{
+            //JSContext* cx(m_ScriptInterface->GetContext());
+            //JS::RootedValue js_object(cx);
+            //m_ScriptInterface->Eval("(Object)", &js_object);
+            ////std::unique_ptr<JS::HandleValueArray> keys(JS::HandleValueArray::empty());
+            //JS::HandleValueArray keys = JS::HandleValueArray::empty();
+            ////JS::HandleValueArray* keys = JS::HandleValueArray::empty();
+            //JS::HandleValueArray args(js_obj);
+            //std::cout << "Calling object.keys" << std::endl;
+            //m_ScriptInterface->CallFunction(js_object, "keys", args, keys);
+
+            //return keys;
+        //}
+
+        PyObject* ConvertJSToPython(JS::HandleValue state)
+        {
+            std::cout << "ConvertJSToPython" << std::endl;
+            JSContext* cx(m_ScriptInterface->GetContext());
+
+            if (state.isObject() && JS_IsArrayObject(cx, state))
+            {
+                std::cout << "array" << std::endl;
+                uint32_t length = 0;
+                JS::RootedObject array(cx, nullptr);
+                array = &state.toObject();
+                JS_GetArrayLength(cx, array, &length);
+
+                PyObject* list = PyList_New(length);
+
+                for (size_t i = 0; i < length; ++i)
+                {
+                    JS::RootedValue jskey(cx);
+                    JS_GetElement(cx, array, i, &jskey);
+                    PyObject* element = ConvertJSToPython(jskey);
+
+                    PyList_SetItem(list, i, element);
+                }
+
+                return list;
+            }
+            else if (state.isObject())
+            {
+                std::cout << "object" << std::endl;
+                PyObject* d = PyDict_New();
+
+                // Get the keys of the object
+                JS::RootedValue js_object(cx);
+                m_ScriptInterface->Eval("(Object)", &js_object);
+                JS::RootedValue ret(cx);
+                m_ScriptInterface->CallFunction(js_object, "keys", &ret, state);
+                JS::RootedObject keys(cx, nullptr);
+                keys = &ret.toObject();
+
+                // Iterate over the keys and build the python dict
+                uint32_t length = 0;
+                JS_GetArrayLength(cx, keys, &length);
+                for (size_t i = 0; i < length; ++i)
+                {
+                    std::string key;
+                    JS::RootedValue jskey(cx);
+                    JS_GetElement(cx, keys, i, &jskey);
+                    m_ScriptInterface->FromJSVal(cx, jskey, key);
+                    JS::RootedValue js_val(cx);
+                    m_ScriptInterface->GetProperty(state, key.c_str(), &js_val);
+
+                    //PyDict_SetItem(d, ConvertJSToPython(jskey), ConvertJSToPython(js_val));
+                    auto pykey = ConvertJSToPython(jskey);
+                    std::cout << "converted key" << std::endl;
+                    auto pyval = ConvertJSToPython(js_val);
+                    std::cout << "converted value!" << std::endl;
+                    PyDict_SetItem(d, pykey, pyval);
+                    std::cout << "set key/value" << std::endl;
+                }
+
+                return d;
+            }
+            else if (state.isString())
+            {
+                std::cout << "string" << std::endl;
+                std::string value;
+                m_ScriptInterface->FromJSVal(cx, state, value);
+                std::cout << "building value from " << value.c_str() << std::endl;
+                return Py_BuildValue("(s)", value);
+            }
+            else if (state.isInt32())
+            {
+                std::cout << "int" << std::endl;
+                int32_t value;
+                m_ScriptInterface->FromJSVal(cx, state, value);
+
+                return Py_BuildValue("(i)", value);
+            }
+            else if (state.isNumber())
+            {
+                std::cout << "double" << std::endl;
+                double value;
+                m_ScriptInterface->FromJSVal(cx, state, value);
+
+                return Py_BuildValue("(d)", value);
+            }
+            else if (state.isBoolean())
+            {
+                std::cout << "boolean" << std::endl;
+                bool value;
+                m_ScriptInterface->FromJSVal(cx, state, value);
+                return Py_BuildValue("[i]", value);
+            }
+            else if (state.isNullOrUndefined())
+            {
+                std::cout << "nullOrUndef" << std::endl;
+                return Py_None;
+            }
+            else
+            {
+                std::cout << "Received unsupported type. Defaulting to None." << std::endl;
+                return Py_None;
+            }
+        }
+
+        PyObject* ConvertJSToPythonViaJson(JS::HandleValue state)
+        {
+            // TODO: import json
+            // TODO: stringify then parse
+        }
+
+        void Run(std::string state, int playerID)
+		{
+            printf("Running python AI Player\n");
+            //PostCommand("({\"type\": \"aichat\", \"message\": \"test!\"})");
+
+            if (PyCallable_Check(pMsgFn))
+            {
+                // TODO: How to build the python dict??
+                //JS::RootedValue state_v = (RootedValue) state;
+                //auto stateStr = m_ScriptInterface->StringifyJSON(&state, false);
+                //PyObject *pValue = Py_BuildValue("(z)", (char*)stateStr);
+
+                auto start = std::chrono::system_clock::now();
+
+                //PyObject *pValue = ConvertJSToPython(state);
+                JSContext* cx(m_ScriptInterface->GetContext());
+                std::cout << "Stringifying stuff" << std::endl;
+                //std::cout << state.c_str() << std::endl;
+                //PyObject* pValue = Py_BuildValue("(s)", (char*) state.c_str());
+                PyObject* pValue = Py_BuildValue("(s)", "testVal");
+                std::cout << "made python string" << std::endl;
+
+                //auto end = std::chrono::system_clock::now();
+                std::cout << "end computed " << std::endl;
+                //std::chrono::duration<double> elapsed_seconds = end-start;
+                //std::cout << "Convert to python time: " << elapsed_seconds.count() << "s\n";
+
+                //PyObject *pValue = ConvertJSToPython(state);
+
+                PyObject_CallObject(pMsgFn, pValue);
+                delete pValue;
+                std::cout << "DONE converting state to python..." << std::endl;
+                // TODO: Expose a method to make actions
+            }
+            else
+            {
+                std::cout << "pMsgFn not callable?" << std::endl;
+            }
+            std::cout << pMsgFn << std::endl;
+		}
+
+		// overloaded with a sharedAI part.
+		// javascript can handle both natively on the same function.
+		void Run(JS::HandleValue state, int playerID)
+        {
+            printf("Running python AI Player\n");
+            //PostCommand("({\"type\": \"aichat\", \"message\": \"test!\"})");
+
+            if (PyCallable_Check(pMsgFn))
+            {
+                // TODO: How to build the python dict??
+                //JS::RootedValue state_v = (RootedValue) state;
+                //auto stateStr = m_ScriptInterface->StringifyJSON(&state, false);
+                //PyObject *pValue = Py_BuildValue("(z)", (char*)stateStr);
+                std::cout << "converting state to python..." << std::endl;
+
+                PyObject *pValue = ConvertJSToPython(state);
+                PyObject_CallObject(pMsgFn, pValue);
+                delete pValue;
+                std::cout << "DONE converting state to python..." << std::endl;
+                // TODO: Expose a method to make actions
+            }
+            else
+            {
+                std::cout << "pMsgFn not callable?" << std::endl;
+            }
+            std::cout << pMsgFn << std::endl;
+		}
+
+		void Run(JS::HandleValue state, int playerID, JS::HandleValue SharedAI)
+		{
+            std::cout << "Running python AI Player (shared)" << std::endl;
+            PostCommand("({\"type\": \"aichat\", \"message\": \"Look at me go! Woot, woot!\"})");
+		}
+
+		void InitAI(JS::HandleValue state, JS::HandleValue SharedAI)
+		{
+            std::cout << "initializing python AI Player" << std::endl;
+            // TODO
+		}
+
+        void PostCommand(const char* rawCmd)
+        {
+            JSContext* cx = m_ScriptInterface->GetContext();
+            JS::RootedValue cmd(cx);
+			m_ScriptInterface->Eval(rawCmd, &cmd);
+            m_Commands.push_back(m_ScriptInterface->WriteStructuredClone(cmd));
+        }
+
+        //private:
+        PyObject *pModule, *pDict, *pInitFn;
+        PyObject *pMsgFn;
+    };
 
 public:
 	struct SCommandSets
@@ -357,6 +688,8 @@ public:
 	static void ExitProgram(ScriptInterface::CxPrivate* UNUSED(pCxPrivate))
 	{
 		QuitEngine();
+        std::cout << "------- PY FINALIZE -------" << std::endl;
+        Py_Finalize();
 	}
 
 	/**
@@ -470,17 +803,54 @@ public:
 		return true;
 	}
 
+    std::unique_ptr<BaseAIPlayer> GetPlayer(const std::wstring& aiName, player_id_t player, u8 difficulty, const std::wstring& behavior)
+    {
+        JSContext* cx = m_ScriptInterface->GetContext();
+        JSAutoRequest rq(cx);
+
+        OsPath path = L"simulation/ai/" + aiName + L"/data.json";
+        JS::RootedValue metadata(cx);
+        this->LoadMetadata(path, &metadata);
+
+        // Get the type from the metadata
+        std::cout << ">>> About to get the player AI" << std::endl;
+        if (!metadata.isUndefined() && m_ScriptInterface->HasProperty(metadata, "type"))
+        {
+            std::string typeName;
+			m_ScriptInterface->GetProperty(metadata, "type", typeName);
+        std::cout << ">>> About to print the AI type" << std::endl;
+            std::cout << ">>> AI Type is " << typeName << std::endl;
+            if (typeName.compare(std::string("Python")) == 0)
+            {
+                return std::unique_ptr<BaseAIPlayer>(new PythonAIPlayer(*this, aiName, player, difficulty, behavior, m_ScriptInterface));
+            }
+        }
+
+        std::cout << ">>> Getting the CAIPlayer" << std::endl;
+        return std::unique_ptr<BaseAIPlayer>(new CAIPlayer(*this, aiName, player, difficulty, behavior, m_ScriptInterface));
+    }
+
 	bool AddPlayer(const std::wstring& aiName, player_id_t player, u8 difficulty, const std::wstring& behavior)
 	{
-		shared_ptr<CAIPlayer> ai(new CAIPlayer(*this, aiName, player, difficulty, behavior, m_ScriptInterface));
-		if (!ai->Initialise())
-			return false;
+        // TODO: add a new type of AIPlayer which uses cpp
+        // What should it be called???
+        // aiName is something like Petra, etc
 
-		// this will be set to true if we need to load the shared Component.
-		if (!m_HasSharedComponent)
-			m_HasSharedComponent = ai->m_UseSharedComponent;
+        std::cout << ">>> " << utf8_from_wstring(aiName) << " - " << utf8_from_wstring(behavior) << difficulty << std::endl;
 
-		m_Players.push_back(ai);
+        // Look up the type of the given aiName
+        std::shared_ptr<BaseAIPlayer> ai = std::move(GetPlayer(aiName, player, difficulty, behavior));
+
+        std::cout << ">>> About to initialize" << std::endl;
+        if (!ai->Initialise())
+            return false;
+
+        // this will be set to true if we need to load the shared Component.
+        if (!m_HasSharedComponent)
+            m_HasSharedComponent = ai->m_UseSharedComponent;
+
+        std::cout << ">>> adding to m_Players" << std::endl;
+        m_Players.push_back(ai);
 
 		return true;
 	}
@@ -883,6 +1253,14 @@ private:
 			m_ScriptInterface->CallFunctionVoid(m_SharedAIObj, "onUpdate", state);
 		}
 
+        auto start = std::chrono::system_clock::now();
+        auto stateStr = m_ScriptInterface->StringifyJSON(&state, false);
+        // Some computation here
+        auto end = std::chrono::system_clock::now();
+        std::chrono::duration<double> elapsed_seconds = end-start;
+        std::cout << "Stringify state time: " << elapsed_seconds.count() << "s\n";
+
+        //std::cout << stateStr << std::endl;
 		for (size_t i = 0; i < m_Players.size(); ++i)
 		{
 			PROFILE3("AI script");
@@ -891,10 +1269,19 @@ private:
 
 			if (m_HasSharedComponent && m_Players[i]->m_UseSharedComponent)
 				m_Players[i]->Run(state, m_Players[i]->m_Player, m_SharedAIObj);
+			else if (m_Players[i]->m_UseStateJSON)
+				m_Players[i]->Run(stateStr, m_Players[i]->m_Player);
 			else
 				m_Players[i]->Run(state, m_Players[i]->m_Player);
 		}
 	}
+
+    void TestStringify(JS::MutableHandleValue state)
+    {
+        std::cout << "testing stringify" << std::endl;
+        auto stateStr = m_ScriptInterface->StringifyJSON(state, false);
+        std::cout << stateStr << std::endl;
+    }
 
 	// Take care to keep this declaration before heap rooted members. Destructors of heap rooted
 	// members have to be called before the runtime destructor.
@@ -908,7 +1295,7 @@ private:
 	bool m_HasLoadedEntityTemplates;
 
 	std::map<VfsPath, JS::Heap<JS::Value> > m_PlayerMetadata;
-	std::vector<shared_ptr<CAIPlayer> > m_Players; // use shared_ptr just to avoid copying
+	std::vector<shared_ptr<BaseAIPlayer> > m_Players; // use shared_ptr just to avoid copying
 
 	bool m_HasSharedComponent;
 	JS::PersistentRootedValue m_SharedAIObj;
@@ -942,6 +1329,10 @@ class CCmpAIManager : public ICmpAIManager
 public:
 	static void ClassInit(CComponentManager& UNUSED(componentManager))
 	{
+        std::cout << "------------- Init Py -------------" << std::endl;
+        setenv("PYTHONPATH","/home/irishninja/projektek/0ad/binaries/data/mods/public/simulation/ai/",1);  // How can I get this value properly??
+        //Py_Initialize();  // TODO: Is this a problem to call multiple times??
+        //Py_InitializeEx(0);
 	}
 
 	DEFAULT_COMPONENT_ALLOCATOR(AIManager)

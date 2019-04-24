@@ -479,9 +479,11 @@ static void RunGameOrAtlas(int argc, const char* argv[])
 	if (args.Has("unique-logs"))
 		g_UniqueLogPostfix = L"_" + std::to_wstring(std::time(nullptr)) + L"_" + std::to_wstring(getpid());
 
+    // TODO: Add command for trajectory logging option
 	const bool isVisualReplay = args.Has("replay-visual");
 	const bool isNonVisualReplay = args.Has("replay");
 	const bool isNonVisual = args.Has("autostart-nonvisual");
+    // TODO: How should we allow agents to start w/ GRPC?
 
 	const OsPath replayFile(
 		isVisualReplay ? args.Get("replay-visual") :

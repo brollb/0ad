@@ -915,7 +915,7 @@ bool Init(const CmdLineArgs& args, int flags)
 	g_Console = new CConsole();
 
 	// g_ConfigDB, command line args, globals
-	CONFIG_Init(args);
+	CONFIG_Init(args);  // TODO: could I add the config globals here?
 
 	// Using a global object for the runtime is a workaround until Simulation and AI use
 	// their own threads and also their own runtimes.

@@ -190,6 +190,7 @@ private:
 	std::list<std::string> m_TimeWarpStates;
 	std::string m_QuickSaveState; // TODO: should implement a proper disk-based quicksave system
 	std::string m_QuickSaveMetadata;
+    std::ostream* m_StateStream;
 };
 
 #endif // INCLUDED_TURNMANAGER
