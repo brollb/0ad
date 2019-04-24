@@ -21,6 +21,7 @@
 #include "simulation2/system/CmpPtr.h"
 #include "simulation2/system/Components.h"
 #include "simulation2/helpers/SimulationCommand.h"
+#include "ps/GameSetup/CmdLineArgs.h"
 #include "scriptinterface/ScriptVal.h"
 
 #include "lib/file/vfs/vfs_path.h"
@@ -39,6 +40,7 @@ class CMessage;
 class SceneCollector;
 class CFrustum;
 class ScriptRuntime;
+extern CmdLineArgs g_args;
 
 /**
  * Public API for simulation system.
