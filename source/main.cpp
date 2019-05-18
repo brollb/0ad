@@ -538,10 +538,10 @@ static void* RunRenderLoop(std::unique_ptr<RLInterface>& service)
 
 	ogl_WarnIfError();
 
-	if (g_Game && g_Game->IsGameStarted() && need_update)
+    service.get()->ApplyEvents();
+	if (need_update)
 	{
-        service.get()->ApplyEvents();
-        if (g_Game && g_Game->GetView())
+        if (g_Game && g_Game->IsGameStarted())  // The game could be reset by ApplyEvents
         {
             g_Game->GetView()->Update(float(0.03));
         }
@@ -742,7 +742,6 @@ static void RunGameOrAtlas(int argc, const char* argv[])
 			installedMods = installer.GetInstalledMods();
 		}
 
-        //g_PauseOnFocusLoss = false;
 		if (isNonVisual)
 		{
 			InitNonVisual(args);
@@ -758,14 +757,15 @@ static void RunGameOrAtlas(int argc, const char* argv[])
 			InitGraphics(args, 0, installedMods);
 			MainControllerInit();
             std::unique_ptr<RLInterface> service = StartRLInterface();
-            std::cout << "g_Shutdown: " << g_Shutdown << std::endl;
 			while (g_Shutdown == ShutdownType::None)
             {
-                std::cout << "Iteration..." << std::endl;
                 RunRenderLoop(service);
             }
-            std::cout << "GAME STARTED!!!" << std::endl;
 		}
+
+		Shutdown(0);
+		MainControllerShutdown();
+		CXeromyces::Terminate();
 
         return;
     }

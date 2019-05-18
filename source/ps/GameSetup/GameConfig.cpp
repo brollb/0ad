@@ -150,6 +150,31 @@ GameConfig GameConfig::from (const CmdLineArgs& args)
     return config;
 }
 
+GameConfig GameConfig::from (const ScenarioConfig& msg)
+{
+    const std::wstring mapType = wstring_from_utf8(msg.type());
+    const std::wstring mapName = wstring_from_utf8(msg.name());
+    GameConfig config(mapType, mapName);
+
+    config.seed = msg.seed() || rand();
+    config.aiseed = msg.aiseed() || rand();
+
+    if (msg.gamespeed())
+        config.gameSpeed = msg.gamespeed();
+    
+    for (int i = 0; i < msg.players_size(); i++)
+    {
+        int playerID = msg.players(i).id();
+        CStr name = msg.players(i).type();
+        int difficulty = msg.players(i).difficulty() || 3;
+
+        config.ai.push_back(std::make_tuple(playerID, name));
+        config.difficulties.push_back(std::make_tuple(playerID, difficulty));
+    }
+
+    return config;
+}
+
 /**
  * Temporarily loads a scenario map and retrieves the "ScriptSettings" JSON
  * data from it.
@@ -197,10 +222,8 @@ CStr8 LoadSettingsOfScenarioMap(const VfsPath &mapPath)
 }
 
 JS::MutableHandleValue GameConfig::toJSValue (const ScriptInterface& scriptInterface) const
-//bool GameConfig::toJSValue (const ScriptInterface& scriptInterface, JS::RootedValue attrs) const
 {
 	JSContext* cx = scriptInterface.GetContext();
-	//JSAutoRequest rq(cx);
 
     JS::RootedValue attrs(cx);
 	scriptInterface.Eval("({})", &attrs);
@@ -276,6 +299,7 @@ JS::MutableHandleValue GameConfig::toJSValue (const ScriptInterface& scriptInter
 	scriptInterface.SetProperty(attrs, "mapType", this->type);
 	scriptInterface.SetProperty(attrs, "map", std::string("maps/" + fullName));
 	scriptInterface.SetProperty(settings, "mapType", this->type);
+	scriptInterface.SetProperty(settings, "gameSpeed", this->gameSpeed);
 	scriptInterface.SetProperty(settings, "CheatsEnabled", true);
 
 	// The seed is used for both random map generation and simulation
