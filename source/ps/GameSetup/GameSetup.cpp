@@ -1228,6 +1228,7 @@ bool Autostart(const GameConfig& config)
  *                                 (default 10 minutes)
  * -autostart-reliccount=NUM       sets the number of relics for relic victory condition
  *                                 (default 2 relics)
+ * -autostart-disable-replay       disable saving of replays
  *
  * Multiplayer:
  * -autostart-playername=NAME      sets local player NAME (default 'anonymous')
