@@ -525,20 +525,21 @@ void InitPsAutostart(bool networked, JS::HandleValue attrs)
 	JSAutoRequest rq(cx);
 
 	JS::RootedValue playerAssignments(cx);
-	scriptInterface.Eval("({})", &playerAssignments);
+	scriptInterface.CreateObject(&playerAssignments);
 
 	if (!networked)
 	{
 		JS::RootedValue localPlayer(cx);
-		scriptInterface.Eval("({})", &localPlayer);
-		scriptInterface.SetProperty(localPlayer, "player", g_Game->GetPlayerID());
+		scriptInterface.CreateObject(&localPlayer, "player", g_Game->GetPlayerID());
 		scriptInterface.SetProperty(playerAssignments, "local", localPlayer);
 	}
 
 	JS::RootedValue sessionInitData(cx);
-	scriptInterface.Eval("({})", &sessionInitData);
-	scriptInterface.SetProperty(sessionInitData, "attribs", attrs);
-	scriptInterface.SetProperty(sessionInitData, "playerAssignments", playerAssignments);
+
+	scriptInterface.CreateObject(
+		&sessionInitData,
+		"attribs", attrs,
+		"playerAssignments", playerAssignments);
 
 	InitPs(true, L"page_loading.xml", &scriptInterface, sessionInitData);
 }
@@ -1112,7 +1113,7 @@ void InitGraphics(const CmdLineArgs& args, int flags, const std::vector<CStr>& i
 			JS::RootedValue data(cx);
 			if (g_GUI)
 			{
-				scriptInterface->Eval("({})", &data);
+				scriptInterface->CreateObject(&data);
 				scriptInterface->SetProperty(data, "isStartup", true);
 				if (!installedMods.empty())
 					scriptInterface->SetProperty(data, "installedMods", installedMods);
