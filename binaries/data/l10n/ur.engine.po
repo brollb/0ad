@@ -1,7 +1,7 @@
 # Translation template for Pyrogenesis.
 # Copyright (C) 2019 Wildfire Games
 # This file is distributed under the same license as the Pyrogenesis project.
-# 
+#
 # Translators:
 msgid ""
 msgstr ""

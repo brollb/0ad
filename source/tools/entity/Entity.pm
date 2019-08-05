@@ -120,9 +120,9 @@ sub get_main_mod
     my $main_mod = $mods_list[0];
     my $fn = "$vfsroot/$main_mod/simulation/templates/$vfspath.xml";
     if (not -e $fn)
-    {                    
+    {
         for my $dep (@mods_list)
-        {       
+        {
             $fn = "$vfsroot/$dep/simulation/templates/$vfspath.xml";
             if (-e $fn)
             {

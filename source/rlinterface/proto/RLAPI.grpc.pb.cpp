@@ -124,5 +124,3 @@ RLAPI::Service::~Service() {
   (void) response;
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
-
-

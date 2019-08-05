@@ -1423,13 +1423,13 @@ inline const ::std::string& Template::name() const {
   return name_.GetNoArena();
 }
 inline void Template::set_name(const ::std::string& value) {
-  
+
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
   // @@protoc_insertion_point(field_set:Template.name)
 }
 #if LANG_CXX11
 inline void Template::set_name(::std::string&& value) {
-  
+
   name_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
   // @@protoc_insertion_point(field_set_rvalue:Template.name)
@@ -1437,31 +1437,31 @@ inline void Template::set_name(::std::string&& value) {
 #endif
 inline void Template::set_name(const char* value) {
   GOOGLE_DCHECK(value != nullptr);
-  
+
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
   // @@protoc_insertion_point(field_set_char:Template.name)
 }
 inline void Template::set_name(const char* value, size_t size) {
-  
+
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
   // @@protoc_insertion_point(field_set_pointer:Template.name)
 }
 inline ::std::string* Template::mutable_name() {
-  
+
   // @@protoc_insertion_point(field_mutable:Template.name)
   return name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* Template::release_name() {
   // @@protoc_insertion_point(field_release:Template.name)
-  
+
   return name_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline void Template::set_allocated_name(::std::string* name) {
   if (name != nullptr) {
-    
+
   } else {
-    
+
   }
   name_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), name);
   // @@protoc_insertion_point(field_set_allocated:Template.name)
@@ -1476,13 +1476,13 @@ inline const ::std::string& Template::content() const {
   return content_.GetNoArena();
 }
 inline void Template::set_content(const ::std::string& value) {
-  
+
   content_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
   // @@protoc_insertion_point(field_set:Template.content)
 }
 #if LANG_CXX11
 inline void Template::set_content(::std::string&& value) {
-  
+
   content_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
   // @@protoc_insertion_point(field_set_rvalue:Template.content)
@@ -1490,31 +1490,31 @@ inline void Template::set_content(::std::string&& value) {
 #endif
 inline void Template::set_content(const char* value) {
   GOOGLE_DCHECK(value != nullptr);
-  
+
   content_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
   // @@protoc_insertion_point(field_set_char:Template.content)
 }
 inline void Template::set_content(const char* value, size_t size) {
-  
+
   content_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
   // @@protoc_insertion_point(field_set_pointer:Template.content)
 }
 inline ::std::string* Template::mutable_content() {
-  
+
   // @@protoc_insertion_point(field_mutable:Template.content)
   return content_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* Template::release_content() {
   // @@protoc_insertion_point(field_release:Template.content)
-  
+
   return content_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline void Template::set_allocated_content(::std::string* content) {
   if (content != nullptr) {
-    
+
   } else {
-    
+
   }
   content_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), content);
   // @@protoc_insertion_point(field_set_allocated:Template.content)
@@ -1567,7 +1567,7 @@ inline ::google::protobuf::int32 Action::playerid() const {
   return playerid_;
 }
 inline void Action::set_playerid(::google::protobuf::int32 value) {
-  
+
   playerid_ = value;
   // @@protoc_insertion_point(field_set:Action.playerID)
 }
@@ -1581,13 +1581,13 @@ inline const ::std::string& Action::content() const {
   return content_.GetNoArena();
 }
 inline void Action::set_content(const ::std::string& value) {
-  
+
   content_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
   // @@protoc_insertion_point(field_set:Action.content)
 }
 #if LANG_CXX11
 inline void Action::set_content(::std::string&& value) {
-  
+
   content_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
   // @@protoc_insertion_point(field_set_rvalue:Action.content)
@@ -1595,31 +1595,31 @@ inline void Action::set_content(::std::string&& value) {
 #endif
 inline void Action::set_content(const char* value) {
   GOOGLE_DCHECK(value != nullptr);
-  
+
   content_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
   // @@protoc_insertion_point(field_set_char:Action.content)
 }
 inline void Action::set_content(const char* value, size_t size) {
-  
+
   content_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
   // @@protoc_insertion_point(field_set_pointer:Action.content)
 }
 inline ::std::string* Action::mutable_content() {
-  
+
   // @@protoc_insertion_point(field_mutable:Action.content)
   return content_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* Action::release_content() {
   // @@protoc_insertion_point(field_release:Action.content)
-  
+
   return content_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline void Action::set_allocated_content(::std::string* content) {
   if (content != nullptr) {
-    
+
   } else {
-    
+
   }
   content_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), content);
   // @@protoc_insertion_point(field_set_allocated:Action.content)
@@ -1638,13 +1638,13 @@ inline const ::std::string& Observation::content() const {
   return content_.GetNoArena();
 }
 inline void Observation::set_content(const ::std::string& value) {
-  
+
   content_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
   // @@protoc_insertion_point(field_set:Observation.content)
 }
 #if LANG_CXX11
 inline void Observation::set_content(::std::string&& value) {
-  
+
   content_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
   // @@protoc_insertion_point(field_set_rvalue:Observation.content)
@@ -1652,31 +1652,31 @@ inline void Observation::set_content(::std::string&& value) {
 #endif
 inline void Observation::set_content(const char* value) {
   GOOGLE_DCHECK(value != nullptr);
-  
+
   content_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
   // @@protoc_insertion_point(field_set_char:Observation.content)
 }
 inline void Observation::set_content(const char* value, size_t size) {
-  
+
   content_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
   // @@protoc_insertion_point(field_set_pointer:Observation.content)
 }
 inline ::std::string* Observation::mutable_content() {
-  
+
   // @@protoc_insertion_point(field_mutable:Observation.content)
   return content_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* Observation::release_content() {
   // @@protoc_insertion_point(field_release:Observation.content)
-  
+
   return content_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline void Observation::set_allocated_content(::std::string* content) {
   if (content != nullptr) {
-    
+
   } else {
-    
+
   }
   content_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), content);
   // @@protoc_insertion_point(field_set_allocated:Observation.content)
@@ -1704,13 +1704,13 @@ inline const ::ScenarioConfig& ResetRequest::scenario() const {
 }
 inline ::ScenarioConfig* ResetRequest::release_scenario() {
   // @@protoc_insertion_point(field_release:ResetRequest.scenario)
-  
+
   ::ScenarioConfig* temp = scenario_;
   scenario_ = nullptr;
   return temp;
 }
 inline ::ScenarioConfig* ResetRequest::mutable_scenario() {
-  
+
   if (scenario_ == nullptr) {
     auto* p = CreateMaybeMessage<::ScenarioConfig>(GetArenaNoVirtual());
     scenario_ = p;
@@ -1729,9 +1729,9 @@ inline void ResetRequest::set_allocated_scenario(::ScenarioConfig* scenario) {
       scenario = ::google::protobuf::internal::GetOwnedMessage(
           message_arena, scenario, submessage_arena);
     }
-    
+
   } else {
-    
+
   }
   scenario_ = scenario;
   // @@protoc_insertion_point(field_set_allocated:ResetRequest.scenario)
@@ -1750,7 +1750,7 @@ inline ::google::protobuf::int32 AIPlayer::id() const {
   return id_;
 }
 inline void AIPlayer::set_id(::google::protobuf::int32 value) {
-  
+
   id_ = value;
   // @@protoc_insertion_point(field_set:AIPlayer.id)
 }
@@ -1764,13 +1764,13 @@ inline const ::std::string& AIPlayer::type() const {
   return type_.GetNoArena();
 }
 inline void AIPlayer::set_type(const ::std::string& value) {
-  
+
   type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
   // @@protoc_insertion_point(field_set:AIPlayer.type)
 }
 #if LANG_CXX11
 inline void AIPlayer::set_type(::std::string&& value) {
-  
+
   type_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
   // @@protoc_insertion_point(field_set_rvalue:AIPlayer.type)
@@ -1778,31 +1778,31 @@ inline void AIPlayer::set_type(::std::string&& value) {
 #endif
 inline void AIPlayer::set_type(const char* value) {
   GOOGLE_DCHECK(value != nullptr);
-  
+
   type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
   // @@protoc_insertion_point(field_set_char:AIPlayer.type)
 }
 inline void AIPlayer::set_type(const char* value, size_t size) {
-  
+
   type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
   // @@protoc_insertion_point(field_set_pointer:AIPlayer.type)
 }
 inline ::std::string* AIPlayer::mutable_type() {
-  
+
   // @@protoc_insertion_point(field_mutable:AIPlayer.type)
   return type_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* AIPlayer::release_type() {
   // @@protoc_insertion_point(field_release:AIPlayer.type)
-  
+
   return type_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline void AIPlayer::set_allocated_type(::std::string* type) {
   if (type != nullptr) {
-    
+
   } else {
-    
+
   }
   type_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), type);
   // @@protoc_insertion_point(field_set_allocated:AIPlayer.type)
@@ -1817,7 +1817,7 @@ inline ::google::protobuf::uint32 AIPlayer::difficulty() const {
   return difficulty_;
 }
 inline void AIPlayer::set_difficulty(::google::protobuf::uint32 value) {
-  
+
   difficulty_ = value;
   // @@protoc_insertion_point(field_set:AIPlayer.difficulty)
 }
@@ -1835,13 +1835,13 @@ inline const ::std::string& ScenarioConfig::type() const {
   return type_.GetNoArena();
 }
 inline void ScenarioConfig::set_type(const ::std::string& value) {
-  
+
   type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
   // @@protoc_insertion_point(field_set:ScenarioConfig.type)
 }
 #if LANG_CXX11
 inline void ScenarioConfig::set_type(::std::string&& value) {
-  
+
   type_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
   // @@protoc_insertion_point(field_set_rvalue:ScenarioConfig.type)
@@ -1849,31 +1849,31 @@ inline void ScenarioConfig::set_type(::std::string&& value) {
 #endif
 inline void ScenarioConfig::set_type(const char* value) {
   GOOGLE_DCHECK(value != nullptr);
-  
+
   type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
   // @@protoc_insertion_point(field_set_char:ScenarioConfig.type)
 }
 inline void ScenarioConfig::set_type(const char* value, size_t size) {
-  
+
   type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
   // @@protoc_insertion_point(field_set_pointer:ScenarioConfig.type)
 }
 inline ::std::string* ScenarioConfig::mutable_type() {
-  
+
   // @@protoc_insertion_point(field_mutable:ScenarioConfig.type)
   return type_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* ScenarioConfig::release_type() {
   // @@protoc_insertion_point(field_release:ScenarioConfig.type)
-  
+
   return type_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline void ScenarioConfig::set_allocated_type(::std::string* type) {
   if (type != nullptr) {
-    
+
   } else {
-    
+
   }
   type_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), type);
   // @@protoc_insertion_point(field_set_allocated:ScenarioConfig.type)
@@ -1888,13 +1888,13 @@ inline const ::std::string& ScenarioConfig::name() const {
   return name_.GetNoArena();
 }
 inline void ScenarioConfig::set_name(const ::std::string& value) {
-  
+
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
   // @@protoc_insertion_point(field_set:ScenarioConfig.name)
 }
 #if LANG_CXX11
 inline void ScenarioConfig::set_name(::std::string&& value) {
-  
+
   name_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
   // @@protoc_insertion_point(field_set_rvalue:ScenarioConfig.name)
@@ -1902,31 +1902,31 @@ inline void ScenarioConfig::set_name(::std::string&& value) {
 #endif
 inline void ScenarioConfig::set_name(const char* value) {
   GOOGLE_DCHECK(value != nullptr);
-  
+
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
   // @@protoc_insertion_point(field_set_char:ScenarioConfig.name)
 }
 inline void ScenarioConfig::set_name(const char* value, size_t size) {
-  
+
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
   // @@protoc_insertion_point(field_set_pointer:ScenarioConfig.name)
 }
 inline ::std::string* ScenarioConfig::mutable_name() {
-  
+
   // @@protoc_insertion_point(field_mutable:ScenarioConfig.name)
   return name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* ScenarioConfig::release_name() {
   // @@protoc_insertion_point(field_release:ScenarioConfig.name)
-  
+
   return name_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline void ScenarioConfig::set_allocated_name(::std::string* name) {
   if (name != nullptr) {
-    
+
   } else {
-    
+
   }
   name_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), name);
   // @@protoc_insertion_point(field_set_allocated:ScenarioConfig.name)
@@ -1941,13 +1941,13 @@ inline const ::std::string& ScenarioConfig::username() const {
   return username_.GetNoArena();
 }
 inline void ScenarioConfig::set_username(const ::std::string& value) {
-  
+
   username_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
   // @@protoc_insertion_point(field_set:ScenarioConfig.username)
 }
 #if LANG_CXX11
 inline void ScenarioConfig::set_username(::std::string&& value) {
-  
+
   username_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
   // @@protoc_insertion_point(field_set_rvalue:ScenarioConfig.username)
@@ -1955,31 +1955,31 @@ inline void ScenarioConfig::set_username(::std::string&& value) {
 #endif
 inline void ScenarioConfig::set_username(const char* value) {
   GOOGLE_DCHECK(value != nullptr);
-  
+
   username_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
   // @@protoc_insertion_point(field_set_char:ScenarioConfig.username)
 }
 inline void ScenarioConfig::set_username(const char* value, size_t size) {
-  
+
   username_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
   // @@protoc_insertion_point(field_set_pointer:ScenarioConfig.username)
 }
 inline ::std::string* ScenarioConfig::mutable_username() {
-  
+
   // @@protoc_insertion_point(field_mutable:ScenarioConfig.username)
   return username_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* ScenarioConfig::release_username() {
   // @@protoc_insertion_point(field_release:ScenarioConfig.username)
-  
+
   return username_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline void ScenarioConfig::set_allocated_username(::std::string* username) {
   if (username != nullptr) {
-    
+
   } else {
-    
+
   }
   username_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), username);
   // @@protoc_insertion_point(field_set_allocated:ScenarioConfig.username)
@@ -1994,7 +1994,7 @@ inline ::google::protobuf::int32 ScenarioConfig::playerid() const {
   return playerid_;
 }
 inline void ScenarioConfig::set_playerid(::google::protobuf::int32 value) {
-  
+
   playerid_ = value;
   // @@protoc_insertion_point(field_set:ScenarioConfig.playerID)
 }
@@ -2008,7 +2008,7 @@ inline ::google::protobuf::uint32 ScenarioConfig::size() const {
   return size_;
 }
 inline void ScenarioConfig::set_size(::google::protobuf::uint32 value) {
-  
+
   size_ = value;
   // @@protoc_insertion_point(field_set:ScenarioConfig.size)
 }
@@ -2022,7 +2022,7 @@ inline ::google::protobuf::uint32 ScenarioConfig::numplayers() const {
   return numplayers_;
 }
 inline void ScenarioConfig::set_numplayers(::google::protobuf::uint32 value) {
-  
+
   numplayers_ = value;
   // @@protoc_insertion_point(field_set:ScenarioConfig.numPlayers)
 }
@@ -2036,7 +2036,7 @@ inline ::google::protobuf::uint32 ScenarioConfig::seed() const {
   return seed_;
 }
 inline void ScenarioConfig::set_seed(::google::protobuf::uint32 value) {
-  
+
   seed_ = value;
   // @@protoc_insertion_point(field_set:ScenarioConfig.seed)
 }
@@ -2050,7 +2050,7 @@ inline ::google::protobuf::uint32 ScenarioConfig::aiseed() const {
   return aiseed_;
 }
 inline void ScenarioConfig::set_aiseed(::google::protobuf::uint32 value) {
-  
+
   aiseed_ = value;
   // @@protoc_insertion_point(field_set:ScenarioConfig.aiseed)
 }
@@ -2064,7 +2064,7 @@ inline float ScenarioConfig::gamespeed() const {
   return gamespeed_;
 }
 inline void ScenarioConfig::set_gamespeed(float value) {
-  
+
   gamespeed_ = value;
   // @@protoc_insertion_point(field_set:ScenarioConfig.gameSpeed)
 }
@@ -2108,7 +2108,7 @@ inline bool ScenarioConfig::savereplay() const {
   return savereplay_;
 }
 inline void ScenarioConfig::set_savereplay(bool value) {
-  
+
   savereplay_ = value;
   // @@protoc_insertion_point(field_set:ScenarioConfig.saveReplay)
 }

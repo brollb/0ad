@@ -37,7 +37,7 @@
 	<texture file="gaia/temperate_cliff_a_spec.png" name="specTex"/>
 	<texture file="gaia/ao/cliff_d_ao.png" name="aoTex"/>
       </textures>
-    </variant>	
-  </group>  
+    </variant>
+  </group>
   <material>player_trans_ao_parallax_spec.xml</material>
 </actor>

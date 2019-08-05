@@ -43,4 +43,3 @@ def attack(units, target, queued=False, allow_capture=True):
         'allowCapture': allow_capture,
         'queued': queued
     }
-

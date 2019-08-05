@@ -4,7 +4,7 @@
 # 
 # Translators:
 # Boris Karalnik <eyesucker@gmail.com>, 2019
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: 0 A.D. — Empires Ascendant\n"

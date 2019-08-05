@@ -1,7 +1,7 @@
 # Translation template for 0 A.D. — Empires Ascendant.
 # Copyright (C) 2019 Wildfire Games
 # This file is distributed under the same license as the 0 A.D. — Empires Ascendant project.
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: 0 A.D. — Empires Ascendant\n"

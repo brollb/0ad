@@ -6,7 +6,7 @@
       <textures>
         <texture file="props/ground_decal_ice_01.png" name="baseTex"/>
         <texture file="props/ground_decal_ice_01_norm.png" name="normTex"/>
-        <texture file="props/ground_decal_ice_01_spec.png" name="specTex"/>		
+        <texture file="props/ground_decal_ice_01_spec.png" name="specTex"/>
       </textures>
     </variant>
     <variant frequency="1" name="ice_02">
@@ -14,7 +14,7 @@
       <textures>
         <texture file="props/ground_decal_ice_01.png" name="baseTex"/>
         <texture file="props/ground_decal_ice_01_norm.png" name="normTex"/>
-        <texture file="props/ground_decal_ice_01_spec.png" name="specTex"/>		
+        <texture file="props/ground_decal_ice_01_spec.png" name="specTex"/>
       </textures>
     </variant>
     <variant frequency="1" name="ice_03">
@@ -22,7 +22,7 @@
       <textures>
         <texture file="props/ground_decal_ice_01.png" name="baseTex"/>
         <texture file="props/ground_decal_ice_01_norm.png" name="normTex"/>
-        <texture file="props/ground_decal_ice_01_spec.png" name="specTex"/>		
+        <texture file="props/ground_decal_ice_01_spec.png" name="specTex"/>
       </textures>
     </variant>
     <variant frequency="1" name="ice_04">
@@ -30,7 +30,7 @@
       <textures>
         <texture file="props/ground_decal_ice_01.png" name="baseTex"/>
         <texture file="props/ground_decal_ice_01_norm.png" name="normTex"/>
-        <texture file="props/ground_decal_ice_01_spec.png" name="specTex"/>		
+        <texture file="props/ground_decal_ice_01_spec.png" name="specTex"/>
       </textures>
     </variant>
   </group>

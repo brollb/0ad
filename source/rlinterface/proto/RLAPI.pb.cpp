@@ -323,7 +323,7 @@ const char descriptor_table_protodef_RLAPI_2eproto[] =
   "emplateRequest\032\n.Templates\"\000b\006proto3"
   ;
 ::google::protobuf::internal::DescriptorTable descriptor_table_RLAPI_2eproto = {
-  false, InitDefaults_RLAPI_2eproto, 
+  false, InitDefaults_RLAPI_2eproto,
   descriptor_table_protodef_RLAPI_2eproto,
   "RLAPI.proto", &assign_descriptors_table_RLAPI_2eproto, 716,
 };

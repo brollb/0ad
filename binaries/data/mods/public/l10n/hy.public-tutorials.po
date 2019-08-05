@@ -4,7 +4,7 @@
 # 
 # Translators:
 # Vahe Avagyan <vahe-a@outlook.fr>, 2019
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: 0 A.D. — Empires Ascendant\n"

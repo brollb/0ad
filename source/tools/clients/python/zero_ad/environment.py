@@ -162,4 +162,3 @@ class EntityTemplate():
 
     def __str__(self):
         return ElementTree.tostring(self.data).decode('utf-8')
-

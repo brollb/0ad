@@ -1,7 +1,7 @@
 # Translation template for Pyrogenesis - Mod Selector.
 # Copyright (C) 2018 Wildfire Games
 # This file is distributed under the same license as the Pyrogenesis - Mod Selector project.
-# 
+#
 # Translators:
 msgid ""
 msgstr ""
