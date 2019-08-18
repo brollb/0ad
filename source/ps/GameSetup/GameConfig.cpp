@@ -43,6 +43,7 @@ GameConfig GameConfig::from (const CmdLineArgs& args)
 	struct GameConfig config(mapType, mapName);
 
 	config.nonVisual = args.Has("autostart-nonvisual");
+	config.saveReplay = !args.Has("autostart-disable-replay");
 	if (args.Has("autostart-size"))
 	{
 		config.size = args.Get("autostart-size").ToUInt();
