@@ -20,7 +20,7 @@
 using grpc::ServerContext;
 using boost::fibers::channel_op_status;
 
-grpc::Status RLInterface::Step(ServerContext* context, const Actions* commands, Observation* obs)
+grpc::Status RLInterface::Step(ServerContext* UNUSED(context), const Actions* commands, Observation* obs)
 {
 	std::lock_guard<std::mutex> lock(m_lock);
 
@@ -44,7 +44,7 @@ grpc::Status RLInterface::Step(ServerContext* context, const Actions* commands, 
 	return grpc::Status::OK;
 }
 
-grpc::Status RLInterface::Reset(ServerContext* context, const ResetRequest* req, Observation* obs)
+grpc::Status RLInterface::Reset(ServerContext* UNUSED(context), const ResetRequest* req, Observation* obs)
 {
 	std::lock_guard<std::mutex> lock(m_lock);
 	if (req->has_scenario())
@@ -61,7 +61,7 @@ grpc::Status RLInterface::Reset(ServerContext* context, const ResetRequest* req,
 	return grpc::Status::OK;
 }
 
-grpc::Status RLInterface::GetTemplates(ServerContext* context, const GetTemplateRequest* req, Templates* res)
+grpc::Status RLInterface::GetTemplates(ServerContext* UNUSED(context), const GetTemplateRequest* req, Templates* res)
 {
 	std::lock_guard<std::mutex> lock(m_lock);
 	if (!g_Game)
