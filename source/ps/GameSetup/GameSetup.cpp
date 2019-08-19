@@ -700,8 +700,10 @@ void EndGame()
 	const bool nonVisual = g_Game && g_Game->IsGraphicsDisabled();
 
 	if (g_Game && g_Game->IsGameStarted() && !g_Game->IsVisualReplay() &&
-	    g_AtlasGameLoop && !g_AtlasGameLoop->running && !nonVisual)
-		VisualReplay::SaveReplayMetadata(g_GUI->GetActiveGUI()->GetScriptInterface().get());
+		g_AtlasGameLoop && !g_AtlasGameLoop->running && g_Game->IsSavingReplay())
+	{
+		VisualReplay::SaveReplayMetadata(&g_Game->GetSimulation2()->GetScriptInterface());
+	}
 
 	SAFE_DELETE(g_NetClient);
 	SAFE_DELETE(g_NetServer);

@@ -152,6 +152,14 @@ public:
 	}
 
 	/**
+	 * Get m_IsSavingReplay.
+	 *
+	 * @return bool the value of m_IsSavingReplay.
+	 **/
+	inline bool IsSavingReplay() const
+	{	return m_IsSavingReplay; }
+
+	/**
 	 * Get m_IsVisualReplay.
 	 *
 	 * @return bool the value of m_IsVisualReplay.
@@ -215,6 +223,7 @@ public:
 private:
 	void RegisterInit(const JS::HandleValue attribs, const std::string& savedState);
 	IReplayLogger* m_ReplayLogger;
+	bool m_IsSavingReplay;
 
 	std::vector<CColor> m_PlayerColors;
 

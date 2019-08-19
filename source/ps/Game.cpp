@@ -43,6 +43,7 @@
 #include "renderer/TimeManager.h"
 #include "renderer/WaterManager.h"
 #include "scriptinterface/ScriptInterface.h"
+#include "scriptinterface/ScriptConversions.h"
 #include "simulation2/Simulation2.h"
 #include "simulation2/components/ICmpPlayer.h"
 #include "simulation2/components/ICmpPlayerManager.h"
@@ -74,7 +75,8 @@ CGame::CGame(bool disableGraphics, bool replayLog):
 	m_ViewedPlayerID(-1),
 	m_IsSavedGame(false),
 	m_IsVisualReplay(false),
-	m_ReplayStream(NULL)
+	m_ReplayStream(NULL),
+    m_IsSavingReplay(replayLog)
 {
 	// TODO: should use CDummyReplayLogger unless activated by cmd-line arg, perhaps?
 	if (replayLog)
