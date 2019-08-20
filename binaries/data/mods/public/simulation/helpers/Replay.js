@@ -5,12 +5,7 @@
 function getReplayMetadata()
 {
 	let cmpGuiInterface = Engine.QueryInterface(SYSTEM_ENTITY, IID_GuiInterface);
-	let extendedSimState = cmpGuiInterface.GetExtendedSimulationState();
-	return {
-		"timeElapsed": extendedSimState.timeElapsed,
-		"playerStates": extendedSimState.players,
-		"mapSettings": Engine.GetInitAttributes().settings
-	};
+	return cmpGuiInterface.GetReplayMetadata();
 }
 
 Engine.RegisterGlobal("getReplayMetadata", getReplayMetadata);

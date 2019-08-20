@@ -89,10 +89,5 @@ function cancelOnLoadGameError(msg)
  */
 function getReplayMetadata()
 {
-	let extendedSimState = Engine.GuiInterfaceCall("GetExtendedSimulationState");
-	return {
-		"timeElapsed": extendedSimState.timeElapsed,
-		"playerStates": extendedSimState.players,
-		"mapSettings": Engine.GetInitAttributes().settings
-	};
+	return Engine.GuiInterfaceCall("GetReplayMetadata");
 }

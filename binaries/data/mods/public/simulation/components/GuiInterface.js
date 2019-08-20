@@ -191,6 +191,16 @@ GuiInterface.prototype.GetExtendedSimulationState = function()
 	return ret;
 };
 
+GuiInterface.prototype.GetReplayMetadata = function()
+{
+	let extendedSimState = this.GetExtendedSimulationState();
+	return {
+		"timeElapsed": extendedSimState.timeElapsed,
+		"playerStates": extendedSimState.players,
+		"mapSettings": Engine.GetInitAttributes().settings
+	};
+};
+
 GuiInterface.prototype.GetRenamedEntities = function(player)
 {
 	if (this.miragedEntities[player])
@@ -1913,6 +1923,7 @@ let exposedFunctions = {
 
 	"GetSimulationState": 1,
 	"GetExtendedSimulationState": 1,
+	"GetReplayMetadata": 1,
 	"GetRenamedEntities": 1,
 	"ClearRenamedEntities": 1,
 	"GetEntityState": 1,
