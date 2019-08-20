@@ -79,6 +79,7 @@ that of Atlas depending on commandline parameters.
 #include "scriptinterface/ScriptEngine.h"
 #include "simulation2/Simulation2.h"
 #include "simulation2/system/TurnManager.h"
+#include "rlinterface/RLInterface.cpp"
 #include "soundmanager/ISoundManager.h"
 
 #if OS_UNIX
@@ -316,7 +317,7 @@ static void RendererIncrementalLoad()
 	while (more && timer_Time() - startTime < maxTime);
 }
 
-static void Frame()
+static void Frame(bool using_interface=false, RLInterface* service=nullptr)
 {
 	g_Profiler2.RecordFrameStart();
 	PROFILE2("frame");
@@ -388,9 +389,17 @@ static void Frame()
 
 	ogl_WarnIfError();
 
+	if (using_interface)
+	{
+		service->ApplyEvents();
+	}
+
 	if (g_Game && g_Game->IsGameStarted() && need_update)
 	{
-		g_Game->Update(realTimeSinceLastFrame);
+		if (!using_interface)
+		{
+			g_Game->Update(realTimeSinceLastFrame);
+		}
 
 		g_Game->GetView()->Update(float(realTimeSinceLastFrame));
 	}
@@ -460,6 +469,20 @@ static void MainControllerShutdown()
 	in_reset_handlers();
 }
 
+static std::unique_ptr<RLInterface> StartRLInterface(CmdLineArgs args)
+{
+	std::cout << "Starting RL Interface..." << std::endl;
+	std::string server_address("0.0.0.0:50051");
+	if (!args.Get("rpc-server").empty())
+	{
+		server_address = args.Get("rpc-server");
+	}
+
+	std::unique_ptr<RLInterface> service(new RLInterface);
+	service.get()->Listen(server_address);
+	return service;
+}
+
 // moved into a helper function to ensure args is destroyed before
 // exit(), which may result in a memory leak.
 static void RunGameOrAtlas(int argc, const char* argv[])
@@ -474,7 +497,7 @@ static void RunGameOrAtlas(int argc, const char* argv[])
 		return;
 	}
 
-	if (args.Has("autostart-nonvisual") && args.Get("autostart").empty())
+	if (args.Has("autostart-nonvisual") && args.Get("autostart").empty() && !args.Has("rpc-server"))
 	{
 		LOGERROR("-autostart-nonvisual cant be used alone. A map with -autostart=\"TYPEDIR/MAPNAME\" is needed.");
 		return;
@@ -600,6 +623,56 @@ static void RunGameOrAtlas(int argc, const char* argv[])
 
 	// run the game
 	int flags = INIT_MODS;
+
+	if (args.Has("rpc-server")) {
+		while (!Init(args, flags))
+		{
+			flags &= ~INIT_MODS;
+			Shutdown(SHUTDOWN_FROM_CONFIG);
+		}
+		g_Shutdown = ShutdownType::None;
+
+		std::vector<CStr> installedMods;
+		if (!modsToInstall.empty())
+		{
+			Paths paths(args);
+			CModInstaller installer(paths.UserData() / "mods", paths.Cache());
+
+			// Install the mods without deleting the pyromod files
+			for (const OsPath& modPath : modsToInstall)
+				installer.Install(modPath, g_ScriptRuntime, true);
+
+			installedMods = installer.GetInstalledMods();
+		}
+
+		if (isNonVisual)
+		{
+			InitNonVisual(args);
+			std::unique_ptr<RLInterface> service = StartRLInterface(args);
+			while (g_Shutdown == ShutdownType::None)
+			{
+				service.get()->ApplyEvents();
+			}
+			QuitEngine();
+		}
+		else
+		{
+			InitGraphics(args, 0, installedMods);
+			MainControllerInit();
+			std::unique_ptr<RLInterface> service = StartRLInterface(args);
+			while (g_Shutdown == ShutdownType::None)
+			{
+				Frame(true, service.get());
+			}
+		}
+
+		Shutdown(0);
+		MainControllerShutdown();
+		CXeromyces::Terminate();
+
+		return;
+	}
+
 	do
 	{
 		g_Shutdown = ShutdownType::None;

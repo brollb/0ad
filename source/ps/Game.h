@@ -22,6 +22,7 @@
 
 #include "ps/Errors.h"
 #include "ps/Filesystem.h"
+#include "ps/GameSetup/GameConfig.h"
 #include "scriptinterface/ScriptVal.h"
 #include "simulation2/helpers/Player.h"
 

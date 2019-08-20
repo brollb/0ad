@@ -202,7 +202,11 @@ extern_lib_defs = {
 				-- The following are not strictly link dependencies on all systems, but
 				-- are included for compatibility with different versions of Boost
 				android_names = { "boost_filesystem-gcc-mt", "boost_system-gcc-mt" },
-				unix_names = { os.findlib("boost_filesystem-mt") and "boost_filesystem-mt" or "boost_filesystem", os.findlib("boost_system-mt") and "boost_system-mt" or "boost_system" },
+				unix_names = {
+					os.findlib("boost_filesystem-mt") and "boost_filesystem-mt" or "boost_filesystem",
+					os.findlib("boost_fiber-mt") and "boost_fiber-mt" or "boost_fiber",
+					os.findlib("boost_system-mt") and "boost_system-mt" or "boost_system"
+				},
 				osx_names = { "boost_filesystem-mt", "boost_system-mt" },
 			})
 		end,
@@ -675,6 +679,24 @@ extern_lib_defs = {
 			})
 		end,
 	},
+	grpc = {
+		compile_settings = function()
+			if os.istarget("windows") then
+				add_default_include_paths("grpc")
+				add_default_include_paths("grpc++")
+				add_default_include_paths("protobuf")
+			else
+				pkgconfig.add_includes("grpc")
+				pkgconfig.add_includes("grpc++")
+				pkgconfig.add_includes("protobuf")
+			end
+		end,
+		link_settings = function()
+			pkgconfig.add_links("protobuf")
+			pkgconfig.add_links("grpc")
+			pkgconfig.add_links("grpc++")
+		end
+	}
 }
 
 
