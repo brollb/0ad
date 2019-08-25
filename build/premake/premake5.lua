@@ -585,6 +585,16 @@ function setup_all_libs ()
 	setup_static_lib_project("network", source_dirs, extern_libs, {})
 
 	source_dirs = {
+		"rlinterface",
+	}
+	extern_libs = {
+		"boost",
+		"spidermonkey",
+		"sdl",	-- key definitions
+	}
+	setup_static_lib_project("rlinterface", source_dirs, extern_libs, { no_pch = 1 })
+
+	source_dirs = {
 		"third_party/tinygettext/src",
 	}
 	extern_libs = {

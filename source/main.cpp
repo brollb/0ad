@@ -79,6 +79,7 @@ that of Atlas depending on commandline parameters.
 #include "scriptinterface/ScriptEngine.h"
 #include "simulation2/Simulation2.h"
 #include "simulation2/system/TurnManager.h"
+#include "rlinterface/RLInterface.cpp"
 #include "soundmanager/ISoundManager.h"
 
 #if OS_UNIX
@@ -316,8 +317,9 @@ static void RendererIncrementalLoad()
 	while (more && timer_Time() - startTime < maxTime);
 }
 
-static void Frame()
+static void Frame(RLInterface* service = nullptr)
 {
+	const bool using_interface = service != nullptr;
 	g_Profiler2.RecordFrameStart();
 	PROFILE2("frame");
 	g_Profiler2.IncrementFrameNumber();
@@ -388,9 +390,13 @@ static void Frame()
 
 	ogl_WarnIfError();
 
+	if (using_interface)
+		service->TryApplyMessage();
+
 	if (g_Game && g_Game->IsGameStarted() && need_update)
 	{
-		g_Game->Update(realTimeSinceLastFrame);
+		if (!using_interface)
+			g_Game->Update(realTimeSinceLastFrame);
 
 		g_Game->GetView()->Update(float(realTimeSinceLastFrame));
 	}
@@ -462,6 +468,69 @@ static void MainControllerShutdown()
 	in_reset_handlers();
 }
 
+static std::unique_ptr<RLInterface> StartRLInterface(CmdLineArgs args)
+{
+	std::string server_address;
+	CFG_GET_VAL("rlinterface.address", server_address);
+
+	if (!args.Get("rl-interface").empty())
+		server_address = args.Get("rl-interface");
+
+	std::unique_ptr<RLInterface> service(new RLInterface);
+	service.get()->EnableHTTP(server_address);
+	debug_printf("RL interface listening on %s\n", server_address.c_str());
+	return service;
+}
+
+static void RunRLServer(const bool isNonVisual, const std::vector<OsPath> modsToInstall, const CmdLineArgs args)
+{
+	int flags = INIT_MODS;
+	while (!Init(args, flags))
+	{
+		flags &= ~INIT_MODS;
+		Shutdown(SHUTDOWN_FROM_CONFIG);
+	}
+	g_Shutdown = ShutdownType::None;
+
+	std::vector<CStr> installedMods;
+	if (!modsToInstall.empty())
+	{
+		Paths paths(args);
+		CModInstaller installer(paths.UserData() / "mods", paths.Cache());
+
+		// Install the mods without deleting the pyromod files
+		for (const OsPath& modPath : modsToInstall)
+			installer.Install(modPath, g_ScriptRuntime, true);
+
+		installedMods = installer.GetInstalledMods();
+	}
+
+	if (isNonVisual)
+	{
+		InitNonVisual(args);
+		std::unique_ptr<RLInterface> service = StartRLInterface(args);
+		while (g_Shutdown == ShutdownType::None)
+		{
+			service.get()->TryApplyMessage();
+		}
+		QuitEngine();
+	}
+	else
+	{
+		InitGraphics(args, 0, installedMods);
+		MainControllerInit();
+		std::unique_ptr<RLInterface> service = StartRLInterface(args);
+		while (g_Shutdown == ShutdownType::None)
+		{
+			Frame(service.get());
+		}
+	}
+
+	Shutdown(0);
+	MainControllerShutdown();
+	CXeromyces::Terminate();
+}
+
 // moved into a helper function to ensure args is destroyed before
 // exit(), which may result in a memory leak.
 static void RunGameOrAtlas(int argc, const char* argv[])
@@ -476,7 +545,7 @@ static void RunGameOrAtlas(int argc, const char* argv[])
 		return;
 	}
 
-	if (args.Has("autostart-nonvisual") && args.Get("autostart").empty())
+	if (args.Has("autostart-nonvisual") && args.Get("autostart").empty() && !args.Has("rl-interface"))
 	{
 		LOGERROR("-autostart-nonvisual cant be used alone. A map with -autostart=\"TYPEDIR/MAPNAME\" is needed.");
 		return;
@@ -600,8 +669,14 @@ static void RunGameOrAtlas(int argc, const char* argv[])
 	const double res = timer_Resolution();
 	g_frequencyFilter = CreateFrequencyFilter(res, 30.0);
 
+	if (args.Has("rl-interface")) {
+		RunRLServer(isNonVisual, modsToInstall, args);
+		return;
+	}
+
 	// run the game
 	int flags = INIT_MODS;
+
 	do
 	{
 		g_Shutdown = ShutdownType::None;

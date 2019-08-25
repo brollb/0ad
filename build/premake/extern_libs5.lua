@@ -198,11 +198,15 @@ extern_lib_defs = {
 			if os.istarget("windows") or os.istarget("macosx") then
 				add_default_lib_paths("boost")
 			end
+
 			add_default_links({
 				-- The following are not strictly link dependencies on all systems, but
 				-- are included for compatibility with different versions of Boost
 				android_names = { "boost_filesystem-gcc-mt", "boost_system-gcc-mt" },
-				unix_names = { os.findlib("boost_filesystem-mt") and "boost_filesystem-mt" or "boost_filesystem", os.findlib("boost_system-mt") and "boost_system-mt" or "boost_system" },
+				unix_names = {
+					os.findlib("boost_filesystem-mt") and "boost_filesystem-mt" or "boost_filesystem",
+					os.findlib("boost_system-mt") and "boost_system-mt" or "boost_system"
+				},
 				osx_names = { "boost_filesystem-mt", "boost_system-mt" },
 			})
 		end,
@@ -672,7 +676,6 @@ extern_lib_defs = {
 		end,
 	},
 }
-
 
 -- add a set of external libraries to the project; takes care of
 -- include / lib path and linking against the import library.
