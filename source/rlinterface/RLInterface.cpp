@@ -326,7 +326,7 @@ void RLInterface::TryApplyMessage()
 std::string RLInterface::GetGameState()
 {
     const ScriptInterface& scriptInterface = g_Game->GetSimulation2()->GetScriptInterface();
-    const auto simContext = g_Game->GetSimulation2()->GetSimContext();
+    const CSimContext simContext = g_Game->GetSimulation2()->GetSimContext();
     CmpPtr<ICmpAIInterface> cmpAIInterface(simContext.GetSystemEntity());
     JSContext* cx = scriptInterface.GetContext();
     JS::RootedValue state(cx);
