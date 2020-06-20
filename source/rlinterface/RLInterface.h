@@ -52,6 +52,8 @@ struct GameMessage {
 
 extern void EndGame();
 
+struct mg_context;
+
 class RLInterface
 {
 

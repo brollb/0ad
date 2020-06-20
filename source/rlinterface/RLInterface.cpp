@@ -15,12 +15,16 @@
  * along with 0 A.D.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "rlinterface/RLInterface.h"
-#include "third_party/mongoose/mongoose.h"
-#include "third_party/mongoose/mongoose.cpp"
-#include "simulation2/system/LocalTurnManager.h"
-#include <boost/algorithm/string.hpp>
+
 #include <vector>
 #include <regex>
+#include <sstream>
+#include <boost/algorithm/string.hpp>
+
+#include "ps/CLogger.h"
+#include "simulation2/system/LocalTurnManager.h"
+#include "third_party/mongoose/mongoose.h"
+#include "third_party/mongoose/mongoose.cpp"
 
 std::string RLInterface::SendGameMessage(const GameMessage msg)
 {
@@ -106,7 +110,7 @@ static void* RLMgCallback(mg_event event, struct mg_connection *conn, const stru
         if (uri == "/reset")
         {
             int bufSize = conn->buf_size;
-            char buf[bufSize]{};
+            char buf[bufSize];
             mg_read(conn, &buf[0], bufSize);
             std::string content(buf);
             std::string qs(request_info->query_string);
@@ -134,7 +138,7 @@ static void* RLMgCallback(mg_event event, struct mg_connection *conn, const stru
             }
 
             int bufSize = conn->buf_size;
-            char buf[bufSize]{};
+            char buf[bufSize];
             mg_read(conn, &buf[0], bufSize);
             std::string postData(buf);
             std::vector<std::string> lines;
@@ -162,7 +166,7 @@ static void* RLMgCallback(mg_event event, struct mg_connection *conn, const stru
                 return handled;
             }
             int bufSize = conn->buf_size;
-            char buf[bufSize]{};
+            char buf[bufSize];
             mg_read(conn, &buf[0], bufSize);
             std::string postData(buf);
             std::vector<std::string> templateNames;
@@ -253,7 +257,7 @@ void RLInterface::TryApplyMessage()
                     if (isGameStarted)
                         EndGame();
 
-                    g_Game = new CGame(nonVisual, m_ScenarioConfig.saveReplay);
+                    g_Game = new CGame(m_ScenarioConfig.saveReplay);
                     ScriptInterface& scriptInterface = g_Game->GetSimulation2()->GetScriptInterface();
                     JSContext* cx = scriptInterface.GetContext();
                     JS::RootedValue attrs(cx);
