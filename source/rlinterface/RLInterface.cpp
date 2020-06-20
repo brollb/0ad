@@ -277,11 +277,11 @@ void RLInterface::TryApplyMessage()
                     else
                     {
                         JS::RootedValue initData(cx);
-                        scriptInterface.CreateObject(&initData);
+                        scriptInterface.CreateObject(cx, &initData);
                         scriptInterface.SetProperty(initData, "attribs", attrs);
 
                         JS::RootedValue playerAssignments(cx);
-                        scriptInterface.CreateObject(&playerAssignments);
+                        scriptInterface.CreateObject(cx, &playerAssignments);
                         scriptInterface.SetProperty(initData, "playerAssignments", playerAssignments);
 
                         g_GUI->SwitchPage(L"page_loading.xml", &scriptInterface, initData);
