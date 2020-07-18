@@ -18,7 +18,6 @@
 
 #include <vector>
 #include <sstream>
-#include <boost/algorithm/string.hpp>
 
 #include "ps/CLogger.h"
 #include "simulation2/system/LocalTurnManager.h"
@@ -30,304 +29,312 @@
 // to the main thread to be applied
 std::string RLInterface::SendGameMessage(const GameMessage msg)
 {
-    std::unique_lock<std::mutex> msgLock(m_msgLock);  // Rename these?
-    m_GameMessage = &msg;
-    m_msgApplied.wait(msgLock);
-    return m_GameState;
+	std::unique_lock<std::mutex> msgLock(m_msgLock);  // Rename these?
+	m_GameMessage = &msg;
+	m_msgApplied.wait(msgLock);
+	return m_GameState;
 }
 
 std::string RLInterface::Step(const std::vector<Command> commands)
 {
-    std::lock_guard<std::mutex> lock(m_lock);
-    GameMessage msg = { GameMessageType::Commands, commands };
-    return SendGameMessage(msg);
+	std::lock_guard<std::mutex> lock(m_lock);
+	GameMessage msg = { GameMessageType::Commands, commands };
+	return SendGameMessage(msg);
 }
 
 std::string RLInterface::Reset(const ScenarioConfig* scenario)
 {
-    std::lock_guard<std::mutex> lock(m_lock);
-    m_ScenarioConfig = *scenario;
-    struct GameMessage msg = { GameMessageType::Reset };
-    return SendGameMessage(msg);
+	std::lock_guard<std::mutex> lock(m_lock);
+	m_ScenarioConfig = *scenario;
+	struct GameMessage msg = { GameMessageType::Reset };
+	return SendGameMessage(msg);
 }
 
 std::vector<std::string> RLInterface::GetTemplates(const std::vector<std::string> names) const
 {
-    std::lock_guard<std::mutex> lock(m_lock);
-    CSimulation2& simulation = *g_Game->GetSimulation2();
-    CmpPtr<ICmpTemplateManager> cmpTemplateManager(simulation.GetSimContext().GetSystemEntity());
+	std::lock_guard<std::mutex> lock(m_lock);
+	CSimulation2& simulation = *g_Game->GetSimulation2();
+	CmpPtr<ICmpTemplateManager> cmpTemplateManager(simulation.GetSimContext().GetSystemEntity());
 
-    std::vector<std::string> templates;
-    for (const std::string templateName : names)
-    {
-        const CParamNode* node = cmpTemplateManager->GetTemplate(templateName);
+	std::vector<std::string> templates;
+	for (const std::string templateName : names)
+	{
+		const CParamNode* node = cmpTemplateManager->GetTemplate(templateName);
 
-        if (node != nullptr)
-        {
-            std::string content = utf8_from_wstring(node->ToXML());
-            templates.push_back(content);
-        }
-    }
+		if (node != nullptr)
+		{
+			std::string content = utf8_from_wstring(node->ToXML());
+			templates.push_back(content);
+		}
+	}
 
-    return templates;
+	return templates;
 }
 
 static void* RLMgCallback(mg_event event, struct mg_connection *conn, const struct mg_request_info *request_info)
 {
-    RLInterface* interface = (RLInterface*)request_info->user_data;
-    ENSURE(interface);
+	RLInterface* interface = (RLInterface*)request_info->user_data;
+	ENSURE(interface);
 
-    void* handled = (void*)""; // arbitrary non-NULL pointer to indicate successful handling
+	void* handled = (void*)""; // arbitrary non-NULL pointer to indicate successful handling
 
-    const char* header200 =
-        "HTTP/1.1 200 OK\r\n"
-        "Access-Control-Allow-Origin: *\r\n"
-        "Content-Type: text/plain; charset=utf-8\r\n\r\n";
+	const char* header200 =
+		"HTTP/1.1 200 OK\r\n"
+		"Access-Control-Allow-Origin: *\r\n"
+		"Content-Type: text/plain; charset=utf-8\r\n\r\n";
 
-    const char* header404 =
-        "HTTP/1.1 404 Not Found\r\n"
-        "Content-Type: text/plain; charset=utf-8\r\n\r\n"
-        "Unrecognised URI";
+	const char* header404 =
+		"HTTP/1.1 404 Not Found\r\n"
+		"Content-Type: text/plain; charset=utf-8\r\n\r\n"
+		"Unrecognised URI";
 
-    const char* notRunningResponse =
-        "HTTP/1.1 400 Bad Request\r\n"
-        "Content-Type: text/plain; charset=utf-8\r\n\r\n"
-        "Game not running. Please create a scenario first.";
+	const char* notRunningResponse =
+		"HTTP/1.1 400 Bad Request\r\n"
+		"Content-Type: text/plain; charset=utf-8\r\n\r\n"
+		"Game not running. Please create a scenario first.";
 
-    switch (event)
-    {
-    case MG_NEW_REQUEST:
-    {
-        std::stringstream stream;
+	switch (event)
+	{
+	case MG_NEW_REQUEST:
+	{
+		std::stringstream stream;
 
-        std::string uri = request_info->uri;
+		std::string uri = request_info->uri;
 
-        if (uri == "/reset")
-        {
-            int bufSize = conn->buf_size;
-            char buf[bufSize];
-            mg_read(conn, &buf[0], bufSize);
-            std::string content(buf);
-            std::string qs(request_info->query_string);
-            ScenarioConfig scenario;
-            scenario.saveReplay = qs.find("saveReplay") != std::string::npos;
-            scenario.playerID = 1;
+		if (uri == "/reset")
+		{
+			int bufSize = conn->buf_size;
+			char buf[bufSize];
+			mg_read(conn, &buf[0], bufSize);
+			std::string content(buf);
+			std::string qs(request_info->query_string);
+			ScenarioConfig scenario;
+			scenario.saveReplay = qs.find("saveReplay") != std::string::npos;
+			scenario.playerID = 1;
 
-            char playerID[1];
-            int len = mg_get_var(request_info->query_string, qs.length(), "playerID", playerID, 1);
-            if (len != -1)
-            {
-                scenario.playerID = std::stoi(playerID);
-            }
-            scenario.content = content;
-            std::string gameState = interface->Reset(&scenario);
+			char playerID[1];
+			int len = mg_get_var(request_info->query_string, qs.length(), "playerID", playerID, 1);
+			if (len != -1)
+			{
+				scenario.playerID = std::stoi(playerID);
+			}
+			scenario.content = content;
+			std::string gameState = interface->Reset(&scenario);
 
-            stream << gameState.c_str();
-        }
-        else if (uri == "/step")
-        {
-            if (!interface->IsGameRunning()) {
-                mg_printf(conn, "%s", notRunningResponse);
-                return handled;
-            }
+			stream << gameState.c_str();
+		}
+		else if (uri == "/step")
+		{
+			if (!interface->IsGameRunning())
+			{
+				mg_printf(conn, "%s", notRunningResponse);
+				return handled;
+			}
 
-            int bufSize = conn->buf_size;
-            char buf[bufSize];
-            mg_read(conn, &buf[0], bufSize);
-            std::string postData(buf);
-            std::vector<std::string> lines;
-            boost::split(lines, postData, boost::is_any_of("\n"));
-            std::vector<Command> commands;
+			int bufSize = conn->buf_size;
+			char buf[bufSize];
+			mg_read(conn, &buf[0], bufSize);
+			std::string postData(buf);
+			std::stringstream postStream(postData);
+			std::string line;
+			std::vector<Command> commands;
 
-            for (const std::string line : lines) {
-                Command cmd;
-                const std::size_t splitPos = line.find(";");
-                if (splitPos != std::string::npos)
-                {
-                    cmd.playerID = std::stoi(line.substr(0, splitPos));
-                    cmd.json_cmd = line.substr(splitPos + 1);
-                    commands.push_back(cmd);
-                }
-            }
-            std::string gameState = interface->Step(commands);
+			while (std::getline(postStream, line, '\n'))
+			{
+				Command cmd;
+				const std::size_t splitPos = line.find(";");
+				if (splitPos != std::string::npos)
+				{
+					cmd.playerID = std::stoi(line.substr(0, splitPos));
+					cmd.json_cmd = line.substr(splitPos + 1);
+					commands.push_back(cmd);
+				}
+			}
+			std::string gameState = interface->Step(commands);
 
-            stream << gameState.c_str();
-        }
-        else if (uri == "/templates")
-        {
-            if (!interface->IsGameRunning()) {
-                mg_printf(conn, "%s", notRunningResponse);
-                return handled;
-            }
-            int bufSize = conn->buf_size;
-            char buf[bufSize];
-            mg_read(conn, &buf[0], bufSize);
-            std::string postData(buf);
-            std::vector<std::string> templateNames;
-            boost::split(templateNames, postData, boost::is_any_of("\n"));
+			stream << gameState.c_str();
+		}
+		else if (uri == "/templates")
+		{
+			if (!interface->IsGameRunning()) {
+				mg_printf(conn, "%s", notRunningResponse);
+				return handled;
+			}
+			int bufSize = conn->buf_size;
+			char buf[bufSize];
+			mg_read(conn, &buf[0], bufSize);
+			std::string postData(buf);
+			std::stringstream postStream(postData);
+			std::string line;
+			std::vector<std::string> templateNames;
+			while (std::getline(postStream, line, '\n'))
+			{
+				templateNames.push_back(line);
+			}
 
-            for (std::string templateStr : interface->GetTemplates(templateNames))
-            {
-                stream << templateStr.c_str() << "\n";
-            }
+			for (std::string templateStr : interface->GetTemplates(templateNames))
+			{
+				stream << templateStr.c_str() << "\n";
+			}
 
-        }
-        else
-        {
-            mg_printf(conn, "%s", header404);
-            return handled;
-        }
+		}
+		else
+		{
+			mg_printf(conn, "%s", header404);
+			return handled;
+		}
 
-        mg_printf(conn, "%s", header200);
-        std::string str = stream.str();
-        mg_write(conn, str.c_str(), str.length());
-        return handled;
-    }
+		mg_printf(conn, "%s", header200);
+		std::string str = stream.str();
+		mg_write(conn, str.c_str(), str.length());
+		return handled;
+	}
 
-    case MG_HTTP_ERROR:
-        return nullptr;
+	case MG_HTTP_ERROR:
+		return nullptr;
 
-    case MG_EVENT_LOG:
-        // Called by Mongoose's cry()
-        LOGERROR("Mongoose error: %s", request_info->log_message);
-        return nullptr;
+	case MG_EVENT_LOG:
+		// Called by Mongoose's cry()
+		LOGERROR("Mongoose error: %s", request_info->log_message);
+		return nullptr;
 
-    case MG_INIT_SSL:
-        return nullptr;
+	case MG_INIT_SSL:
+		return nullptr;
 
-    default:
-        debug_warn(L"Invalid Mongoose event type");
-        return nullptr;
-    }
+	default:
+		debug_warn(L"Invalid Mongoose event type");
+		return nullptr;
+	}
 };
 
 void RLInterface::EnableHTTP(const char* server_address)
 {
-    LOGMESSAGERENDER("Starting RL interface HTTP server");
+	LOGMESSAGERENDER("Starting RL interface HTTP server");
 
-    // Ignore multiple enablings
-    if (m_MgContext)
-        return;
+	// Ignore multiple enablings
+	if (m_MgContext)
+		return;
 
-    const char *options[] = {
-        "listening_ports", server_address,
-        "num_threads", "6", // enough for the browser's parallel connection limit
-        nullptr
-    };
-    m_MgContext = mg_start(RLMgCallback, this, options);
-    ENSURE(m_MgContext);
+	const char *options[] = {
+		"listening_ports", server_address,
+		"num_threads", "6", // enough for the browser's parallel connection limit
+		nullptr
+	};
+	m_MgContext = mg_start(RLMgCallback, this, options);
+	ENSURE(m_MgContext);
 }
 
 bool RLInterface::TryGetGameMessage(GameMessage& msg)
 {
-    if (m_GameMessage != nullptr) {
-        msg = *m_GameMessage;
-        m_GameMessage = nullptr;
-        return true;
-    }
-    return false;
+	if (m_GameMessage != nullptr) {
+		msg = *m_GameMessage;
+		m_GameMessage = nullptr;
+		return true;
+	}
+	return false;
 }
 
 void RLInterface::TryApplyMessage()
 {
-    const bool nonVisual = !g_GUI;
-    const bool isGameStarted = g_Game && g_Game->IsGameStarted();
-    if (m_NeedsGameState && isGameStarted)
-    {
-        m_GameState = GetGameState();
-        m_msgApplied.notify_one();
-        m_msgLock.unlock();
-        m_NeedsGameState = false;
-    }
+	const bool nonVisual = !g_GUI;
+	const bool isGameStarted = g_Game && g_Game->IsGameStarted();
+	if (m_NeedsGameState && isGameStarted)
+	{
+		m_GameState = GetGameState();
+		m_msgApplied.notify_one();
+		m_msgLock.unlock();
+		m_NeedsGameState = false;
+	}
 
-    if (m_msgLock.try_lock())
-    {
-        GameMessage msg;
-        if (TryGetGameMessage(msg)) {
-            switch (msg.type)
-            {
-                case GameMessageType::Reset:
-                {
-                    if (isGameStarted)
-                        EndGame();
+	if (m_msgLock.try_lock())
+	{
+		GameMessage msg;
+		if (TryGetGameMessage(msg)) {
+			switch (msg.type)
+			{
+				case GameMessageType::Reset:
+				{
+					if (isGameStarted)
+						EndGame();
 
-                    g_Game = new CGame(m_ScenarioConfig.saveReplay);
-                    ScriptInterface& scriptInterface = g_Game->GetSimulation2()->GetScriptInterface();
-                    JSContext* cx = scriptInterface.GetContext();
-                    JS::RootedValue attrs(cx);
-                    scriptInterface.ParseJSON(m_ScenarioConfig.content, &attrs);
+					g_Game = new CGame(m_ScenarioConfig.saveReplay);
+					ScriptInterface& scriptInterface = g_Game->GetSimulation2()->GetScriptInterface();
+					JSContext* cx = scriptInterface.GetContext();
+					JS::RootedValue attrs(cx);
+					scriptInterface.ParseJSON(m_ScenarioConfig.content, &attrs);
 
-                    g_Game->SetPlayerID(m_ScenarioConfig.playerID);
-                    g_Game->StartGame(&attrs, "");
+					g_Game->SetPlayerID(m_ScenarioConfig.playerID);
+					g_Game->StartGame(&attrs, "");
 
-                    if (nonVisual)
-                    {
-                        LDR_NonprogressiveLoad();
-                        ENSURE(g_Game->ReallyStartGame() == PSRETURN_OK);
-                        m_GameState = GetGameState();
-                        m_msgApplied.notify_one();
-                        m_msgLock.unlock();
-                    }
-                    else
-                    {
-                        JS::RootedValue initData(cx);
-                        scriptInterface.CreateObject(cx, &initData);
-                        scriptInterface.SetProperty(initData, "attribs", attrs);
+					if (nonVisual)
+					{
+						LDR_NonprogressiveLoad();
+						ENSURE(g_Game->ReallyStartGame() == PSRETURN_OK);
+						m_GameState = GetGameState();
+						m_msgApplied.notify_one();
+						m_msgLock.unlock();
+					}
+					else
+					{
+						JS::RootedValue initData(cx);
+						scriptInterface.CreateObject(cx, &initData);
+						scriptInterface.SetProperty(initData, "attribs", attrs);
 
-                        JS::RootedValue playerAssignments(cx);
-                        scriptInterface.CreateObject(cx, &playerAssignments);
-                        scriptInterface.SetProperty(initData, "playerAssignments", playerAssignments);
+						JS::RootedValue playerAssignments(cx);
+						scriptInterface.CreateObject(cx, &playerAssignments);
+						scriptInterface.SetProperty(initData, "playerAssignments", playerAssignments);
 
-                        g_GUI->SwitchPage(L"page_loading.xml", &scriptInterface, initData);
-                        m_NeedsGameState = true;
-                    }
-                }
-                    break;
+						g_GUI->SwitchPage(L"page_loading.xml", &scriptInterface, initData);
+						m_NeedsGameState = true;
+					}
+				}
+					break;
 
-                case GameMessageType::Commands:
-                    const ScriptInterface& scriptInterface = g_Game->GetSimulation2()->GetScriptInterface();
-                    CLocalTurnManager* turnMgr = static_cast<CLocalTurnManager*>(g_Game->GetTurnManager());
+				case GameMessageType::Commands:
+					const ScriptInterface& scriptInterface = g_Game->GetSimulation2()->GetScriptInterface();
+					CLocalTurnManager* turnMgr = static_cast<CLocalTurnManager*>(g_Game->GetTurnManager());
 
-                    for (Command command : msg.commands)
-                    {
-                        JSContext* cx = scriptInterface.GetContext();
-                        JS::RootedValue commandJSON(cx);
-                        scriptInterface.ParseJSON(command.json_cmd, &commandJSON);
-                        turnMgr->PostCommand(command.playerID, commandJSON);
-                    }
+					for (Command command : msg.commands)
+					{
+						JSContext* cx = scriptInterface.GetContext();
+						JS::RootedValue commandJSON(cx);
+						scriptInterface.ParseJSON(command.json_cmd, &commandJSON);
+						turnMgr->PostCommand(command.playerID, commandJSON);
+					}
 
-                    const double deltaRealTime = DEFAULT_TURN_LENGTH_SP;
-                    if (nonVisual)
-                    {
-                        const double deltaSimTime = deltaRealTime * g_Game->GetSimRate();
-                        size_t maxTurns = static_cast<size_t>(g_Game->GetSimRate());
-                        g_Game->GetTurnManager()->Update(deltaSimTime, maxTurns);
-                    }
-                    else
-                        g_Game->Update(deltaRealTime);
+					const double deltaRealTime = DEFAULT_TURN_LENGTH_SP;
+					if (nonVisual)
+					{
+						const double deltaSimTime = deltaRealTime * g_Game->GetSimRate();
+						size_t maxTurns = static_cast<size_t>(g_Game->GetSimRate());
+						g_Game->GetTurnManager()->Update(deltaSimTime, maxTurns);
+					}
+					else
+						g_Game->Update(deltaRealTime);
 
-                    m_GameState = GetGameState();
-                    m_msgApplied.notify_one();
-                    m_msgLock.unlock();
-                    break;
-            }
-        } else
-            m_msgLock.unlock();
-    }
+					m_GameState = GetGameState();
+					m_msgApplied.notify_one();
+					m_msgLock.unlock();
+					break;
+			}
+		}
+		else
+			m_msgLock.unlock();
+	}
 }
 
 std::string RLInterface::GetGameState()
 {
-    const ScriptInterface& scriptInterface = g_Game->GetSimulation2()->GetScriptInterface();
-    const CSimContext simContext = g_Game->GetSimulation2()->GetSimContext();
-    CmpPtr<ICmpAIInterface> cmpAIInterface(simContext.GetSystemEntity());
-    JSContext* cx = scriptInterface.GetContext();
-    JS::RootedValue state(cx);
-    cmpAIInterface->GetFullRepresentation(&state, true);
-    return scriptInterface.StringifyJSON(&state, false);
+	const ScriptInterface& scriptInterface = g_Game->GetSimulation2()->GetScriptInterface();
+	const CSimContext simContext = g_Game->GetSimulation2()->GetSimContext();
+	CmpPtr<ICmpAIInterface> cmpAIInterface(simContext.GetSystemEntity());
+	JSContext* cx = scriptInterface.GetContext();
+	JS::RootedValue state(cx);
+	cmpAIInterface->GetFullRepresentation(&state, true);
+	return scriptInterface.StringifyJSON(&state, false);
 }
 
 bool RLInterface::IsGameRunning()
 {
-    return !!g_Game;
+	return !!g_Game;
 }
