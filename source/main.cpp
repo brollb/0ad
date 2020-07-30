@@ -96,6 +96,7 @@ extern CStrW g_UniqueLogPostfix;
 
 // Marks terrain as modified so the minimap can repaint (is there a cleaner way of handling this?)
 bool g_GameRestarted = false;
+RLInterface *g_RLInterface;
 
 // Determines the lifetime of the mainloop
 enum ShutdownType
@@ -317,9 +318,8 @@ static void RendererIncrementalLoad()
 	while (more && timer_Time() - startTime < maxTime);
 }
 
-static void Frame(RLInterface* service = nullptr)
+static void Frame()
 {
-	const bool using_interface = service != nullptr;
 	g_Profiler2.RecordFrameStart();
 	PROFILE2("frame");
 	g_Profiler2.IncrementFrameNumber();
@@ -390,12 +390,12 @@ static void Frame(RLInterface* service = nullptr)
 
 	ogl_WarnIfError();
 
-	if (using_interface)
-		service->TryApplyMessage();
+	if (g_RLInterface)
+		g_RLInterface->TryApplyMessage();
 
 	if (g_Game && g_Game->IsGameStarted() && need_update)
 	{
-		if (!using_interface)
+		if (!g_RLInterface)
 			g_Game->Update(realTimeSinceLastFrame);
 
 		g_Game->GetView()->Update(float(realTimeSinceLastFrame));
@@ -468,7 +468,7 @@ static void MainControllerShutdown()
 	in_reset_handlers();
 }
 
-static std::unique_ptr<RLInterface> StartRLInterface(CmdLineArgs args)
+static void StartRLInterface(CmdLineArgs args)
 {
 	std::string server_address;
 	CFG_GET_VAL("rlinterface.address", server_address);
@@ -476,10 +476,9 @@ static std::unique_ptr<RLInterface> StartRLInterface(CmdLineArgs args)
 	if (!args.Get("rl-interface").empty())
 		server_address = args.Get("rl-interface");
 
-	std::unique_ptr<RLInterface> service(new RLInterface);
-	service.get()->EnableHTTP(server_address.c_str());
+	g_RLInterface = new RLInterface();
+	g_RLInterface->EnableHTTP(server_address.c_str());
 	debug_printf("RL interface listening on %s\n", server_address.c_str());
-	return service;
 }
 
 static void RunRLServer(const bool isNonVisual, const std::vector<OsPath> modsToInstall, const CmdLineArgs args)
@@ -508,27 +507,24 @@ static void RunRLServer(const bool isNonVisual, const std::vector<OsPath> modsTo
 	if (isNonVisual)
 	{
 		InitNonVisual(args);
-		std::unique_ptr<RLInterface> service = StartRLInterface(args);
+		StartRLInterface(args);
 		while (g_Shutdown == ShutdownType::None)
-		{
-			service.get()->TryApplyMessage();
-		}
+			g_RLInterface->TryApplyMessage();
 		QuitEngine();
 	}
 	else
 	{
 		InitGraphics(args, 0, installedMods);
 		MainControllerInit();
-		std::unique_ptr<RLInterface> service = StartRLInterface(args);
+		StartRLInterface(args);
 		while (g_Shutdown == ShutdownType::None)
-		{
-			Frame(service.get());
-		}
+			Frame();
 	}
 
 	Shutdown(0);
 	MainControllerShutdown();
 	CXeromyces::Terminate();
+	delete g_RLInterface;
 }
 
 // moved into a helper function to ensure args is destroyed before

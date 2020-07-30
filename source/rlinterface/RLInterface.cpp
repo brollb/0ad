@@ -282,6 +282,7 @@ void RLInterface::TryApplyMessage()
 					g_Game = new CGame(m_ScenarioConfig.saveReplay);
 					ScriptInterface& scriptInterface = g_Game->GetSimulation2()->GetScriptInterface();
 					JSContext* cx = scriptInterface.GetContext();
+					JSAutoRequest rq(cx);
 					JS::RootedValue attrs(cx);
 					scriptInterface.ParseJSON(m_ScenarioConfig.content, &attrs);
 
@@ -319,6 +320,7 @@ void RLInterface::TryApplyMessage()
 					for (Command command : msg.commands)
 					{
 						JSContext* cx = scriptInterface.GetContext();
+						JSAutoRequest rq(cx);
 						JS::RootedValue commandJSON(cx);
 						scriptInterface.ParseJSON(command.json_cmd, &commandJSON);
 						turnMgr->PostCommand(command.playerID, commandJSON);
@@ -351,6 +353,7 @@ std::string RLInterface::GetGameState()
 	const CSimContext simContext = g_Game->GetSimulation2()->GetSimContext();
 	CmpPtr<ICmpAIInterface> cmpAIInterface(simContext.GetSystemEntity());
 	JSContext* cx = scriptInterface.GetContext();
+	JSAutoRequest rq(cx);
 	JS::RootedValue state(cx);
 	cmpAIInterface->GetFullRepresentation(&state, true);
 	return scriptInterface.StringifyJSON(&state, false);
