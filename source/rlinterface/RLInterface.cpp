@@ -310,10 +310,11 @@ void RLInterface::TryApplyMessage()
 						g_GUI->SwitchPage(L"page_loading.xml", &scriptInterface, initData);
 						m_NeedsGameState = true;
 					}
-				}
 					break;
+				}
 
 				case GameMessageType::Commands:
+				{
 					const ScriptInterface& scriptInterface = g_Game->GetSimulation2()->GetScriptInterface();
 					CLocalTurnManager* turnMgr = static_cast<CLocalTurnManager*>(g_Game->GetTurnManager());
 
@@ -340,6 +341,7 @@ void RLInterface::TryApplyMessage()
 					m_msgApplied.notify_one();
 					m_msgLock.unlock();
 					break;
+				}
 			}
 		}
 		else
