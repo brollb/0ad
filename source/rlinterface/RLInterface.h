@@ -72,9 +72,9 @@ class RLInterface
 		const GameMessage* m_GameMessage = nullptr;
 		std::string m_GameState;
 		bool m_NeedsGameState = false;
-		mutable std::mutex m_lock;
-		std::mutex m_msgLock;
-		std::condition_variable m_msgApplied;
+		mutable std::mutex m_Lock;
+		std::mutex m_MsgLock;
+		std::condition_variable m_MsgApplied;
 		ScenarioConfig m_ScenarioConfig;
 };
 

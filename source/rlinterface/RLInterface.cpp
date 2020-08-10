@@ -44,22 +44,22 @@ RLInterface* g_RLInterface = nullptr;
 // to the main thread to be applied
 std::string RLInterface::SendGameMessage(const GameMessage& msg)
 {
-	std::unique_lock<std::mutex> msgLock(m_msgLock);
+	std::unique_lock<std::mutex> msgLock(m_MsgLock);
 	m_GameMessage = &msg;
-	m_msgApplied.wait(msgLock);
+	m_MsgApplied.wait(msgLock);
 	return m_GameState;
 }
 
 std::string RLInterface::Step(const std::vector<RLGameCommand>& commands)
 {
-	std::lock_guard<std::mutex> lock(m_lock);
+	std::lock_guard<std::mutex> lock(m_Lock);
 	GameMessage msg = { GameMessageType::Commands, commands };
 	return SendGameMessage(msg);
 }
 
 std::string RLInterface::Reset(const ScenarioConfig* scenario)
 {
-	std::lock_guard<std::mutex> lock(m_lock);
+	std::lock_guard<std::mutex> lock(m_Lock);
 	m_ScenarioConfig = *scenario;
 	struct GameMessage msg = { GameMessageType::Reset };
 	return SendGameMessage(msg);
@@ -67,7 +67,7 @@ std::string RLInterface::Reset(const ScenarioConfig* scenario)
 
 std::vector<std::string> RLInterface::GetTemplates(const std::vector<std::string>& names) const
 {
-	std::lock_guard<std::mutex> lock(m_lock);
+	std::lock_guard<std::mutex> lock(m_Lock);
 	CSimulation2& simulation = *g_Game->GetSimulation2();
 	CmpPtr<ICmpTemplateManager> cmpTemplateManager(simulation.GetSimContext().GetSystemEntity());
 
@@ -281,12 +281,12 @@ void RLInterface::TryApplyMessage()
 	if (m_NeedsGameState && isGameStarted)
 	{
 		m_GameState = GetGameState();
-		m_msgApplied.notify_one();
-		m_msgLock.unlock();
+		m_MsgApplied.notify_one();
+		m_MsgLock.unlock();
 		m_NeedsGameState = false;
 	}
 
-	if (m_msgLock.try_lock())
+	if (m_MsgLock.try_lock())
 	{
 		GameMessage msg;
 		if (TryGetGameMessage(msg)) {
@@ -312,8 +312,8 @@ void RLInterface::TryApplyMessage()
 						LDR_NonprogressiveLoad();
 						ENSURE(g_Game->ReallyStartGame() == PSRETURN_OK);
 						m_GameState = GetGameState();
-						m_msgApplied.notify_one();
-						m_msgLock.unlock();
+						m_MsgApplied.notify_one();
+						m_MsgLock.unlock();
 					}
 					else
 					{
@@ -336,8 +336,8 @@ void RLInterface::TryApplyMessage()
 					if (!g_Game)
 					{
 						m_GameState = EMPTY_STATE;
-						m_msgApplied.notify_one();
-						m_msgLock.unlock();
+						m_MsgApplied.notify_one();
+						m_MsgLock.unlock();
 						return;
 					}
 					const ScriptInterface& scriptInterface = g_Game->GetSimulation2()->GetScriptInterface();
@@ -363,14 +363,14 @@ void RLInterface::TryApplyMessage()
 						g_Game->Update(deltaRealTime);
 
 					m_GameState = GetGameState();
-					m_msgApplied.notify_one();
-					m_msgLock.unlock();
+					m_MsgApplied.notify_one();
+					m_MsgLock.unlock();
 					break;
 				}
 			}
 		}
 		else
-			m_msgLock.unlock();
+			m_MsgLock.unlock();
 	}
 }
 
