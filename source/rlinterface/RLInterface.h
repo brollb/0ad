@@ -54,7 +54,6 @@ struct mg_context;
  */
 class RLInterface
 {
-
 	public:
 
 		std::string Step(const std::vector<RLGameCommand>& commands);
