@@ -66,7 +66,7 @@ class RLInterface
 		std::string SendGameMessage(const GameMessage& msg);
 		bool TryGetGameMessage(GameMessage& msg);
 		void TryApplyMessage();
-		std::string GetGameState();
+		std::string GetGameState() const;
 		bool IsGameRunning() const;
 
 	private:

@@ -343,7 +343,7 @@ void RLInterface::TryApplyMessage()
 					const ScriptInterface& scriptInterface = g_Game->GetSimulation2()->GetScriptInterface();
 					CLocalTurnManager* turnMgr = static_cast<CLocalTurnManager*>(g_Game->GetTurnManager());
 
-					for (RLGameCommand command : msg.commands)
+					for (const RLGameCommand& command : msg.commands)
 					{
 						JSContext* cx = scriptInterface.GetContext();
 						JSAutoRequest rq(cx);
@@ -374,7 +374,7 @@ void RLInterface::TryApplyMessage()
 	}
 }
 
-std::string RLInterface::GetGameState()
+std::string RLInterface::GetGameState() const
 {
 	const ScriptInterface& scriptInterface = g_Game->GetSimulation2()->GetScriptInterface();
 	const CSimContext simContext = g_Game->GetSimulation2()->GetSimContext();
