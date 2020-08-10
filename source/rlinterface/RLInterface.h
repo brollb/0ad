@@ -48,9 +48,9 @@ struct mg_context;
 /**
  * Implements an interface providing fundamental capabilities required for reinforcement
  * learning (over HTTP). This primarily consists of enabling an external script to configure
- * the scenario (via Reset) and then step the game engine manually optionally applying
- * player actions (via Step). The interface also supports querying unit templates to provide
- * information about max health and other potentially relevant game state information.
+ * the scenario (via Reset) and then step the game engine manually and apply player actions
+ * (via Step). The interface also supports querying unit templates to provide information
+ * about max health and other potentially relevant game state information.
  */
 class RLInterface
 {
