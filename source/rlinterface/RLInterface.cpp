@@ -42,7 +42,7 @@ RLInterface* g_RLInterface = nullptr;
 // Interactions with the game engine (g_Game) must be done in the main
 // thread as there are specific checks for this. We will pass our commands
 // to the main thread to be applied
-std::string RLInterface::SendGameMessage(const GameMessage msg)
+std::string RLInterface::SendGameMessage(const GameMessage& msg)
 {
 	std::unique_lock<std::mutex> msgLock(m_msgLock);
 	m_GameMessage = &msg;
@@ -50,7 +50,7 @@ std::string RLInterface::SendGameMessage(const GameMessage msg)
 	return m_GameState;
 }
 
-std::string RLInterface::Step(const std::vector<Command> commands)
+std::string RLInterface::Step(const std::vector<RLGameCommand>& commands)
 {
 	std::lock_guard<std::mutex> lock(m_lock);
 	GameMessage msg = { GameMessageType::Commands, commands };
@@ -65,7 +65,7 @@ std::string RLInterface::Reset(const ScenarioConfig* scenario)
 	return SendGameMessage(msg);
 }
 
-std::vector<std::string> RLInterface::GetTemplates(const std::vector<std::string> names) const
+std::vector<std::string> RLInterface::GetTemplates(const std::vector<std::string>& names) const
 {
 	std::lock_guard<std::mutex> lock(m_lock);
 	CSimulation2& simulation = *g_Game->GetSimulation2();
@@ -169,11 +169,11 @@ static void* RLMgCallback(mg_event event, struct mg_connection *conn, const stru
 			std::string postData(buf.get(), bufSize);
 			std::stringstream postStream(postData);
 			std::string line;
-			std::vector<Command> commands;
+			std::vector<RLGameCommand> commands;
 
 			while (std::getline(postStream, line, '\n'))
 			{
-				Command cmd;
+				RLGameCommand cmd;
 				const std::size_t splitPos = line.find(";");
 				if (splitPos != std::string::npos)
 				{
@@ -275,6 +275,7 @@ bool RLInterface::TryGetGameMessage(GameMessage& msg)
 
 void RLInterface::TryApplyMessage()
 {
+	const static std::string EMPTY_STATE;
 	const bool nonVisual = !g_GUI;
 	const bool isGameStarted = g_Game && g_Game->IsGameStarted();
 	if (m_NeedsGameState && isGameStarted)
@@ -342,7 +343,7 @@ void RLInterface::TryApplyMessage()
 					const ScriptInterface& scriptInterface = g_Game->GetSimulation2()->GetScriptInterface();
 					CLocalTurnManager* turnMgr = static_cast<CLocalTurnManager*>(g_Game->GetTurnManager());
 
-					for (Command command : msg.commands)
+					for (RLGameCommand command : msg.commands)
 					{
 						JSContext* cx = scriptInterface.GetContext();
 						JSAutoRequest rq(cx);
@@ -385,7 +386,7 @@ std::string RLInterface::GetGameState()
 	return scriptInterface.StringifyJSON(&state, false);
 }
 
-bool RLInterface::IsGameRunning()
+bool RLInterface::IsGameRunning() const
 {
 	return !!g_Game;
 }

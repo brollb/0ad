@@ -76,7 +76,7 @@ that of Atlas depending on commandline parameters.
 #include "graphics/TextureManager.h"
 #include "gui/GUIManager.h"
 #include "renderer/Renderer.h"
-#include "rlinterface/RLInterface.cpp"
+#include "rlinterface/RLInterface.h"
 #include "scriptinterface/ScriptEngine.h"
 #include "simulation2/Simulation2.h"
 #include "simulation2/system/TurnManager.h"

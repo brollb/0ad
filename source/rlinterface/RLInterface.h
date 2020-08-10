@@ -23,42 +23,50 @@
 #include <mutex>
 #include <vector>
 
-struct ScenarioConfig {
+struct ScenarioConfig
+{
 	bool saveReplay;
 	player_id_t playerID;
 	std::string content;
 };
-struct Command {
+struct RLGameCommand
+{
 	int playerID;
 	std::string json_cmd;
 };
 
-enum GameMessageType { Reset, Commands };
+enum class GameMessageType { Reset, Commands };
 struct GameMessage {
 	GameMessageType type;
-	std::vector<Command> commands;
+	std::vector<RLGameCommand> commands;
 };
 
 extern void EndGame();
 
 struct mg_context;
-const static std::string EMPTY_STATE;
 
+/**
+ * Implements an interface providing fundamental capabilities required for reinforcement
+ * learning (over HTTP). This primarily consists of enabling an external script to configure
+ * the scenario (via Reset) and then step the game engine manually optionally applying
+ * player actions (via Step). The interface also supports querying unit templates to provide
+ * information about max health and other potentially relevant game state information.
+ */
 class RLInterface
 {
 
 	public:
 
-		std::string Step(const std::vector<Command> commands);
+		std::string Step(const std::vector<RLGameCommand>& commands);
 		std::string Reset(const ScenarioConfig* scenario);
-		std::vector<std::string> GetTemplates(const std::vector<std::string> names) const;
+		std::vector<std::string> GetTemplates(const std::vector<std::string>& names) const;
 
 		void EnableHTTP(const char* server_address);
-		std::string SendGameMessage(const GameMessage msg);
+		std::string SendGameMessage(const GameMessage& msg);
 		bool TryGetGameMessage(GameMessage& msg);
 		void TryApplyMessage();
 		std::string GetGameState();
-		bool IsGameRunning();
+		bool IsGameRunning() const;
 
 	private:
 		mg_context* m_MgContext = nullptr;
