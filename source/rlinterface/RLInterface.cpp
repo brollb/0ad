@@ -53,7 +53,7 @@ std::string RLInterface::SendGameMessage(const GameMessage& msg)
 std::string RLInterface::Step(const std::vector<RLGameCommand>& commands)
 {
 	std::lock_guard<std::mutex> lock(m_Lock);
-	GameMessage msg = { GameMessageType::Commands, commands };
+	const GameMessage msg = { GameMessageType::Commands, commands };
 	return SendGameMessage(msg);
 }
 
@@ -61,7 +61,7 @@ std::string RLInterface::Reset(const ScenarioConfig* scenario)
 {
 	std::lock_guard<std::mutex> lock(m_Lock);
 	m_ScenarioConfig = *scenario;
-	struct GameMessage msg = { GameMessageType::Reset };
+	const GameMessage msg = { GameMessageType::Reset };
 	return SendGameMessage(msg);
 }
 
@@ -78,7 +78,7 @@ std::vector<std::string> RLInterface::GetTemplates(const std::vector<std::string
 
 		if (node != nullptr)
 		{
-			std::string content = utf8_from_wstring(node->ToXML());
+			const std::string content = utf8_from_wstring(node->ToXML());
 			templates.push_back(content);
 		}
 	}
@@ -119,7 +119,7 @@ static void* RLMgCallback(mg_event event, struct mg_connection *conn, const stru
 	{
 		std::stringstream stream;
 
-		std::string uri = request_info->uri;
+		const std::string uri = request_info->uri;
 
 		if (uri == "/reset")
 		{
@@ -130,22 +130,22 @@ static void* RLMgCallback(mg_event event, struct mg_connection *conn, const stru
 				return handled;
 			}
 			ScenarioConfig scenario;
-			std::string qs(request_info->query_string);
+			const std::string qs(request_info->query_string);
 			scenario.saveReplay = qs.find("saveReplay") != std::string::npos;
 
 			scenario.playerID = 1;
 			char playerID[1];
-			int len = mg_get_var(request_info->query_string, qs.length(), "playerID", playerID, 1);
+			const int len = mg_get_var(request_info->query_string, qs.length(), "playerID", playerID, 1);
 			if (len != -1)
 				scenario.playerID = std::stoi(playerID);
 
-			int bufSize = std::atoi(val);
+			const int bufSize = std::atoi(val);
 			std::unique_ptr<char> buf = std::unique_ptr<char>(new char[bufSize]);
 			mg_read(conn, buf.get(), bufSize);
-			std::string content(buf.get(), bufSize);
+			const std::string content(buf.get(), bufSize);
 			scenario.content = content;
 
-			std::string gameState = interface->Reset(&scenario);
+			const std::string gameState = interface->Reset(&scenario);
 
 			stream << gameState.c_str();
 		}
@@ -166,7 +166,7 @@ static void* RLMgCallback(mg_event event, struct mg_connection *conn, const stru
 			int bufSize = std::atoi(val);
 			std::unique_ptr<char> buf = std::unique_ptr<char>(new char[bufSize]);
 			mg_read(conn, buf.get(), bufSize);
-			std::string postData(buf.get(), bufSize);
+			const std::string postData(buf.get(), bufSize);
 			std::stringstream postStream(postData);
 			std::string line;
 			std::vector<RLGameCommand> commands;
@@ -182,7 +182,7 @@ static void* RLMgCallback(mg_event event, struct mg_connection *conn, const stru
 					commands.push_back(cmd);
 				}
 			}
-			std::string gameState = interface->Step(commands);
+			const std::string gameState = interface->Step(commands);
 			if (gameState.empty())
 			{
 				mg_printf(conn, "%s", notRunningResponse);
@@ -203,10 +203,10 @@ static void* RLMgCallback(mg_event event, struct mg_connection *conn, const stru
 				mg_printf(conn, "%s", noPostData);
 				return handled;
 			}
-			int bufSize = std::atoi(val);
+			const int bufSize = std::atoi(val);
 			std::unique_ptr<char> buf = std::unique_ptr<char>(new char[bufSize]);
 			mg_read(conn, buf.get(), bufSize);
-			std::string postData(buf.get(), bufSize);
+			const std::string postData(buf.get(), bufSize);
 			std::stringstream postStream(postData);
 			std::string line;
 			std::vector<std::string> templateNames;
@@ -224,7 +224,7 @@ static void* RLMgCallback(mg_event event, struct mg_connection *conn, const stru
 		}
 
 		mg_printf(conn, "%s", header200);
-		std::string str = stream.str();
+		const std::string str = stream.str();
 		mg_write(conn, str.c_str(), str.length());
 		return handled;
 	}
@@ -356,7 +356,7 @@ void RLInterface::TryApplyMessage()
 					if (nonVisual)
 					{
 						const double deltaSimTime = deltaRealTime * g_Game->GetSimRate();
-						size_t maxTurns = static_cast<size_t>(g_Game->GetSimRate());
+						const size_t maxTurns = static_cast<size_t>(g_Game->GetSimRate());
 						g_Game->GetTurnManager()->Update(deltaSimTime, maxTurns);
 					}
 					else
