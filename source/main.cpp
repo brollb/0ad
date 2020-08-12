@@ -653,13 +653,12 @@ static void RunGameOrAtlas(int argc, const char* argv[])
 		{
 			InitNonVisual(args);
 			if (isUsingRLInterface)
-			{
 				StartRLInterface(args);
-				while (g_Shutdown == ShutdownType::None)
+
+			while (g_Shutdown == ShutdownType::None)
+				if (isUsingRLInterface)
 					g_RLInterface->TryApplyMessage();
-			}
-			else
-				while (g_Shutdown == ShutdownType::None)
+				else
 					NonVisualFrame();
 		}
 		else
