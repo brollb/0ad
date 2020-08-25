@@ -33,36 +33,35 @@
 #include "third_party/mongoose/mongoose.h"
 
 #include <queue>
-#include <tuple>
 #include <sstream>
+#include <tuple>
 
 // Globally accessible pointer to the RL Interface.
-RLInterface* g_RLInterface = nullptr;
+std::unique_ptr<RLInterface> g_RLInterface = nullptr;
 
 // Interactions with the game engine (g_Game) must be done in the main
-// thread as there are specific checks for this. We will pass our commands
-// to the main thread to be applied
+// thread as there are specific checks for this. We will pass messages
+// to the main thread to be applied (ie, "GameMessage"s).
 std::string RLInterface::SendGameMessage(const GameMessage& msg)
 {
 	std::unique_lock<std::mutex> msgLock(m_MsgLock);
 	m_GameMessage = &msg;
 	m_MsgApplied.wait(msgLock);
+	m_GameMessage = nullptr;
 	return m_GameState;
 }
 
-std::string RLInterface::Step(const std::vector<RLGameCommand>& commands)
+std::string RLInterface::Step(std::vector<RLGameCommand>&& commands)
 {
 	std::lock_guard<std::mutex> lock(m_Lock);
-	const GameMessage msg = { GameMessageType::Commands, commands };
-	return SendGameMessage(msg);
+	return SendGameMessage({ GameMessageType::Commands, std::move(commands) });
 }
 
-std::string RLInterface::Reset(const ScenarioConfig* scenario)
+std::string RLInterface::Reset(ScenarioConfig&& scenario)
 {
 	std::lock_guard<std::mutex> lock(m_Lock);
-	m_ScenarioConfig = *scenario;
-	const GameMessage msg = { GameMessageType::Reset };
-	return SendGameMessage(msg);
+	m_ScenarioConfig = std::move(scenario);
+	return SendGameMessage({ GameMessageType::Reset });
 }
 
 std::vector<std::string> RLInterface::GetTemplates(const std::vector<std::string>& names) const
@@ -145,7 +144,7 @@ static void* RLMgCallback(mg_event event, struct mg_connection *conn, const stru
 			const std::string content(buf.get(), bufSize);
 			scenario.content = content;
 
-			const std::string gameState = interface->Reset(&scenario);
+			const std::string gameState = interface->Reset(std::move(scenario));
 
 			stream << gameState.c_str();
 		}
@@ -182,7 +181,7 @@ static void* RLMgCallback(mg_event event, struct mg_connection *conn, const stru
 					commands.push_back(cmd);
 				}
 			}
-			const std::string gameState = interface->Step(commands);
+			const std::string gameState = interface->Step(std::move(commands));
 			if (gameState.empty())
 			{
 				mg_printf(conn, "%s", notRunningResponse);
@@ -265,7 +264,8 @@ void RLInterface::EnableHTTP(const char* server_address)
 
 bool RLInterface::TryGetGameMessage(GameMessage& msg)
 {
-	if (m_GameMessage != nullptr) {
+	if (m_GameMessage != nullptr)
+	{
 		msg = *m_GameMessage;
 		m_GameMessage = nullptr;
 		return true;
@@ -289,7 +289,8 @@ void RLInterface::TryApplyMessage()
 	if (m_MsgLock.try_lock())
 	{
 		GameMessage msg;
-		if (TryGetGameMessage(msg)) {
+		if (TryGetGameMessage(msg))
+		{
 			switch (msg.type)
 			{
 				case GameMessageType::Reset:

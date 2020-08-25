@@ -393,12 +393,12 @@ static void Frame()
 
 	ogl_WarnIfError();
 
-	if (g_RLInterface)
+	if (g_RLInterface.get())
 		g_RLInterface->TryApplyMessage();
 
 	if (g_Game && g_Game->IsGameStarted() && need_update)
 	{
-		if (!g_RLInterface)
+		if (!g_RLInterface.get())
 			g_Game->Update(realTimeSinceLastFrame);
 
 		g_Game->GetView()->Update(float(realTimeSinceLastFrame));
@@ -479,7 +479,7 @@ static void StartRLInterface(CmdLineArgs args)
 	if (!args.Get("rl-interface").empty())
 		server_address = args.Get("rl-interface");
 
-	g_RLInterface = new RLInterface();
+	g_RLInterface = std::unique_ptr<RLInterface>();
 	g_RLInterface->EnableHTTP(server_address.c_str());
 	debug_printf("RL interface listening on %s\n", server_address.c_str());
 }
@@ -656,10 +656,12 @@ static void RunGameOrAtlas(int argc, const char* argv[])
 				StartRLInterface(args);
 
 			while (g_Shutdown == ShutdownType::None)
+			{
 				if (isUsingRLInterface)
 					g_RLInterface->TryApplyMessage();
 				else
 					NonVisualFrame();
+			}
 		}
 		else
 		{
@@ -677,8 +679,6 @@ static void RunGameOrAtlas(int argc, const char* argv[])
 		Shutdown(0);
 		MainControllerShutdown();
 		flags &= ~INIT_MODS;
-		if (isUsingRLInterface)
-			delete g_RLInterface;
 
 	} while (g_Shutdown == ShutdownType::Restart);
 

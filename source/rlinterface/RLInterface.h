@@ -35,7 +35,10 @@ struct RLGameCommand
 	std::string json_cmd;
 };
 
-enum class GameMessageType { Reset, Commands };
+enum class GameMessageType {
+    Reset,
+    Commands
+};
 struct GameMessage {
 	GameMessageType type;
 	std::vector<RLGameCommand> commands;
@@ -58,19 +61,21 @@ class RLInterface
 {
 	public:
 
-		std::string Step(const std::vector<RLGameCommand>& commands);
-		std::string Reset(const ScenarioConfig* scenario);
+		std::string Step(std::vector<RLGameCommand>&& commands);
+		std::string Reset(ScenarioConfig&& scenario);
 		std::vector<std::string> GetTemplates(const std::vector<std::string>& names) const;
 
 		void EnableHTTP(const char* server_address);
-		std::string SendGameMessage(const GameMessage& msg);
-		bool TryGetGameMessage(GameMessage& msg);
 		void TryApplyMessage();
-		std::string GetGameState() const;
 		bool IsGameRunning() const;
 
 	private:
+		std::string SendGameMessage(const GameMessage& msg);
+		bool TryGetGameMessage(GameMessage& msg);
+		std::string GetGameState() const;
+
 		mg_context* m_MgContext = nullptr;
+
 		const GameMessage* m_GameMessage = nullptr;
 		std::string m_GameState;
 		bool m_NeedsGameState = false;
@@ -80,6 +85,6 @@ class RLInterface
 		ScenarioConfig m_ScenarioConfig;
 };
 
-extern RLInterface* g_RLInterface;
+extern std::unique_ptr<RLInterface> g_RLInterface;
 
 #endif // INCLUDED_RLINTERFACE
