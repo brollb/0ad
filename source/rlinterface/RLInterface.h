@@ -23,13 +23,17 @@
 #include <mutex>
 #include <vector>
 
+struct mg_context;
+extern void EndGame();
+
+namespace RL {
 struct ScenarioConfig
 {
 	bool saveReplay;
 	player_id_t playerID;
 	std::string content;
 };
-struct RLGameCommand
+struct GameCommand
 {
 	int playerID;
 	std::string json_cmd;
@@ -41,12 +45,8 @@ enum class GameMessageType {
 };
 struct GameMessage {
 	GameMessageType type;
-	std::vector<RLGameCommand> commands;
+	std::vector<GameCommand> commands;
 };
-
-extern void EndGame();
-
-struct mg_context;
 
 /**
  * Implements an interface providing fundamental capabilities required for reinforcement
@@ -57,11 +57,11 @@ struct mg_context;
  * also supports querying unit templates to provide information about max health and other
  * potentially relevant game state information.
  */
-class RLInterface
+class Interface
 {
 	public:
 
-		std::string Step(std::vector<RLGameCommand>&& commands);
+		std::string Step(std::vector<GameCommand>&& commands);
 		std::string Reset(ScenarioConfig&& scenario);
 		std::vector<std::string> GetTemplates(const std::vector<std::string>& names) const;
 
@@ -84,7 +84,8 @@ class RLInterface
 		std::condition_variable m_MsgApplied;
 		ScenarioConfig m_ScenarioConfig;
 };
+}
 
-extern std::unique_ptr<RLInterface> g_RLInterface;
+extern std::unique_ptr<RL::Interface> g_RLInterface;
 
 #endif // INCLUDED_RLINTERFACE

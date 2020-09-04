@@ -393,12 +393,12 @@ static void Frame()
 
 	ogl_WarnIfError();
 
-	if (g_RLInterface.get())
+	if (g_RLInterface)
 		g_RLInterface->TryApplyMessage();
 
 	if (g_Game && g_Game->IsGameStarted() && need_update)
 	{
-		if (!g_RLInterface.get())
+		if (!g_RLInterface)
 			g_Game->Update(realTimeSinceLastFrame);
 
 		g_Game->GetView()->Update(float(realTimeSinceLastFrame));
@@ -479,7 +479,7 @@ static void StartRLInterface(CmdLineArgs args)
 	if (!args.Get("rl-interface").empty())
 		server_address = args.Get("rl-interface");
 
-	g_RLInterface = std::unique_ptr<RLInterface>(new RLInterface);
+	g_RLInterface = std::unique_ptr<RL::Interface>(new RL::Interface);
 	g_RLInterface->EnableHTTP(server_address.c_str());
 	debug_printf("RL interface listening on %s\n", server_address.c_str());
 }

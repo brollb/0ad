@@ -37,12 +37,12 @@
 #include <tuple>
 
 // Globally accessible pointer to the RL Interface.
-std::unique_ptr<RLInterface> g_RLInterface = nullptr;
+std::unique_ptr<RL::Interface> g_RLInterface = nullptr;
 
 // Interactions with the game engine (g_Game) must be done in the main
 // thread as there are specific checks for this. We will pass messages
 // to the main thread to be applied (ie, "GameMessage"s).
-std::string RLInterface::SendGameMessage(const GameMessage& msg)
+std::string RL::Interface::SendGameMessage(const GameMessage& msg)
 {
 	std::unique_lock<std::mutex> msgLock(m_MsgLock);
 	m_GameMessage = &msg;
@@ -51,20 +51,20 @@ std::string RLInterface::SendGameMessage(const GameMessage& msg)
 	return m_GameState;
 }
 
-std::string RLInterface::Step(std::vector<RLGameCommand>&& commands)
+std::string RL::Interface::Step(std::vector<RL::GameCommand>&& commands)
 {
 	std::lock_guard<std::mutex> lock(m_Lock);
 	return SendGameMessage({ GameMessageType::Commands, std::move(commands) });
 }
 
-std::string RLInterface::Reset(ScenarioConfig&& scenario)
+std::string RL::Interface::Reset(RL::ScenarioConfig&& scenario)
 {
 	std::lock_guard<std::mutex> lock(m_Lock);
 	m_ScenarioConfig = std::move(scenario);
 	return SendGameMessage({ GameMessageType::Reset });
 }
 
-std::vector<std::string> RLInterface::GetTemplates(const std::vector<std::string>& names) const
+std::vector<std::string> RL::Interface::GetTemplates(const std::vector<std::string>& names) const
 {
 	std::lock_guard<std::mutex> lock(m_Lock);
 	CSimulation2& simulation = *g_Game->GetSimulation2();
@@ -87,7 +87,7 @@ std::vector<std::string> RLInterface::GetTemplates(const std::vector<std::string
 
 static void* RLMgCallback(mg_event event, struct mg_connection *conn, const struct mg_request_info *request_info)
 {
-	RLInterface* interface = (RLInterface*)request_info->user_data;
+	RL::Interface* interface = (RL::Interface*)request_info->user_data;
 	ENSURE(interface);
 
 	void* handled = (void*)""; // arbitrary non-NULL pointer to indicate successful handling
@@ -128,7 +128,7 @@ static void* RLMgCallback(mg_event event, struct mg_connection *conn, const stru
 				mg_printf(conn, "%s", noPostData);
 				return handled;
 			}
-			ScenarioConfig scenario;
+			RL::ScenarioConfig scenario;
 			const std::string qs(request_info->query_string);
 			scenario.saveReplay = qs.find("saveReplay") != std::string::npos;
 
@@ -168,11 +168,11 @@ static void* RLMgCallback(mg_event event, struct mg_connection *conn, const stru
 			const std::string postData(buf.get(), bufSize);
 			std::stringstream postStream(postData);
 			std::string line;
-			std::vector<RLGameCommand> commands;
+			std::vector<RL::GameCommand> commands;
 
 			while (std::getline(postStream, line, '\n'))
 			{
-				RLGameCommand cmd;
+				RL::GameCommand cmd;
 				const std::size_t splitPos = line.find(";");
 				if (splitPos != std::string::npos)
 				{
@@ -245,7 +245,7 @@ static void* RLMgCallback(mg_event event, struct mg_connection *conn, const stru
 	}
 };
 
-void RLInterface::EnableHTTP(const char* server_address)
+void RL::Interface::EnableHTTP(const char* server_address)
 {
 	LOGMESSAGERENDER("Starting RL interface HTTP server");
 
@@ -262,7 +262,7 @@ void RLInterface::EnableHTTP(const char* server_address)
 	ENSURE(m_MgContext);
 }
 
-bool RLInterface::TryGetGameMessage(GameMessage& msg)
+bool RL::Interface::TryGetGameMessage(GameMessage& msg)
 {
 	if (m_GameMessage != nullptr)
 	{
@@ -273,7 +273,7 @@ bool RLInterface::TryGetGameMessage(GameMessage& msg)
 	return false;
 }
 
-void RLInterface::TryApplyMessage()
+void RL::Interface::TryApplyMessage()
 {
 	const static std::string EMPTY_STATE;
 	const bool nonVisual = !g_GUI;
@@ -344,7 +344,7 @@ void RLInterface::TryApplyMessage()
 					const ScriptInterface& scriptInterface = g_Game->GetSimulation2()->GetScriptInterface();
 					CLocalTurnManager* turnMgr = static_cast<CLocalTurnManager*>(g_Game->GetTurnManager());
 
-					for (const RLGameCommand& command : msg.commands)
+					for (const RL::GameCommand& command : msg.commands)
 					{
 						JSContext* cx = scriptInterface.GetContext();
 						JSAutoRequest rq(cx);
@@ -375,7 +375,7 @@ void RLInterface::TryApplyMessage()
 	}
 }
 
-std::string RLInterface::GetGameState() const
+std::string RL::Interface::GetGameState() const
 {
 	const ScriptInterface& scriptInterface = g_Game->GetSimulation2()->GetScriptInterface();
 	const CSimContext simContext = g_Game->GetSimulation2()->GetSimContext();
@@ -387,7 +387,7 @@ std::string RLInterface::GetGameState() const
 	return scriptInterface.StringifyJSON(&state, false);
 }
 
-bool RLInterface::IsGameRunning() const
+bool RL::Interface::IsGameRunning() const
 {
 	return !!g_Game;
 }
