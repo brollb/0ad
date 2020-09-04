@@ -479,7 +479,7 @@ static void StartRLInterface(CmdLineArgs args)
 	if (!args.Get("rl-interface").empty())
 		server_address = args.Get("rl-interface");
 
-	g_RLInterface = std::unique_ptr<RLInterface>();
+	g_RLInterface = std::unique_ptr<RLInterface>(new RLInterface);
 	g_RLInterface->EnableHTTP(server_address.c_str());
 	debug_printf("RL interface listening on %s\n", server_address.c_str());
 }
