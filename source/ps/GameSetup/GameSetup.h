@@ -26,7 +26,6 @@
 extern void GUI_DisplayLoadProgress(int percent, const wchar_t* pending_task);
 
 extern void Render();
-extern void EndGame();
 
 extern bool ShouldRender();
 
@@ -35,6 +34,8 @@ extern bool ShouldRender();
  * must be called from the very beginning of main.
  **/
 extern void EarlyInit();
+
+extern void EndGame();
 
 enum InitFlags
 {
