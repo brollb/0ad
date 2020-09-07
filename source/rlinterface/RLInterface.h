@@ -24,9 +24,9 @@
 #include <vector>
 
 struct mg_context;
-extern void EndGame();
 
-namespace RL {
+namespace RL
+{
 struct ScenarioConfig
 {
 	bool saveReplay;
@@ -39,9 +39,10 @@ struct GameCommand
 	std::string json_cmd;
 };
 
-enum class GameMessageType {
-    Reset,
-    Commands
+enum class GameMessageType
+{
+	Reset,
+	Commands,
 };
 struct GameMessage {
 	GameMessageType type;
