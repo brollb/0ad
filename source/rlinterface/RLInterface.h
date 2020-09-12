@@ -41,6 +41,7 @@ struct GameCommand
 
 enum class GameMessageType
 {
+	None,
 	Reset,
 	Commands,
 };
@@ -72,13 +73,13 @@ class Interface
 		bool IsGameRunning() const;
 
 	private:
-		std::string SendGameMessage(const GameMessage&& msg);
+		std::string SendGameMessage(GameMessage&& msg);
 		bool TryGetGameMessage(GameMessage& msg);
 		std::string GetGameState() const;
 
 		mg_context* m_MgContext = nullptr;
 
-		const GameMessage* m_GameMessage = nullptr;
+		GameMessage m_GameMessage;
 		std::string m_GameState;
 		bool m_NeedsGameState = false;
 		mutable std::mutex m_Lock;

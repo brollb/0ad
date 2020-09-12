@@ -44,10 +44,10 @@ namespace RL
 // Interactions with the game engine (g_Game) must be done in the main
 // thread as there are specific checks for this. We will pass messages
 // to the main thread to be applied (ie, "GameMessage"s).
-std::string Interface::SendGameMessage(const GameMessage&& msg)
+std::string Interface::SendGameMessage(GameMessage&& msg)
 {
 	std::unique_lock<std::mutex> msgLock(m_MsgLock);
-	m_GameMessage = &msg;
+	m_GameMessage = std::move(msg);
 	m_MsgApplied.wait(msgLock);
 	return m_GameState;
 }
@@ -264,10 +264,10 @@ void Interface::EnableHTTP(const char* server_address)
 
 bool Interface::TryGetGameMessage(GameMessage& msg)
 {
-	if (m_GameMessage)
+	if (m_GameMessage.type != GameMessageType::None)
 	{
-		msg = *m_GameMessage;
-		m_GameMessage = nullptr;
+		msg = m_GameMessage;
+		m_GameMessage = {GameMessageType::None};
 		return true;
 	}
 	return false;
