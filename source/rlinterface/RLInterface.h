@@ -44,7 +44,8 @@ enum class GameMessageType
 	Reset,
 	Commands,
 };
-struct GameMessage {
+struct GameMessage
+{
 	GameMessageType type;
 	std::vector<GameCommand> commands;
 };
@@ -71,7 +72,7 @@ class Interface
 		bool IsGameRunning() const;
 
 	private:
-		std::string SendGameMessage(const GameMessage& msg);
+		std::string SendGameMessage(const GameMessage&& msg);
 		bool TryGetGameMessage(GameMessage& msg);
 		std::string GetGameState() const;
 

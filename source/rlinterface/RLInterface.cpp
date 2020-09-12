@@ -44,7 +44,7 @@ namespace RL
 // Interactions with the game engine (g_Game) must be done in the main
 // thread as there are specific checks for this. We will pass messages
 // to the main thread to be applied (ie, "GameMessage"s).
-std::string Interface::SendGameMessage(const GameMessage& msg)
+std::string Interface::SendGameMessage(const GameMessage&& msg)
 {
 	std::unique_lock<std::mutex> msgLock(m_MsgLock);
 	m_GameMessage = &msg;
@@ -139,7 +139,7 @@ static void* RLMgCallback(mg_event event, struct mg_connection *conn, const stru
 				scenario.playerID = std::stoi(playerID);
 
 			const int bufSize = std::atoi(val);
-			std::unique_ptr<char> buf = std::unique_ptr<char>(new char[bufSize]);
+			std::unique_ptr<char[]> buf = std::unique_ptr<char[]>(new char[bufSize]);
 			mg_read(conn, buf.get(), bufSize);
 			const std::string content(buf.get(), bufSize);
 			scenario.content = content;
@@ -163,7 +163,7 @@ static void* RLMgCallback(mg_event event, struct mg_connection *conn, const stru
 				return handled;
 			}
 			int bufSize = std::atoi(val);
-			std::unique_ptr<char> buf = std::unique_ptr<char>(new char[bufSize]);
+			std::unique_ptr<char[]> buf = std::unique_ptr<char[]>(new char[bufSize]);
 			mg_read(conn, buf.get(), bufSize);
 			const std::string postData(buf.get(), bufSize);
 			std::stringstream postStream(postData);
@@ -203,7 +203,7 @@ static void* RLMgCallback(mg_event event, struct mg_connection *conn, const stru
 				return handled;
 			}
 			const int bufSize = std::atoi(val);
-			std::unique_ptr<char> buf = std::unique_ptr<char>(new char[bufSize]);
+			std::unique_ptr<char[]> buf = std::unique_ptr<char[]>(new char[bufSize]);
 			mg_read(conn, buf.get(), bufSize);
 			const std::string postData(buf.get(), bufSize);
 			std::stringstream postStream(postData);
