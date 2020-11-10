@@ -44,6 +44,7 @@ enum class GameMessageType
 	None,
 	Reset,
 	Commands,
+	Evaluate
 };
 struct GameMessage
 {
@@ -66,6 +67,7 @@ class Interface
 
 		std::string Step(std::vector<GameCommand>&& commands);
 		std::string Reset(ScenarioConfig&& scenario);
+		std::string Evaluate(std::string&& code);
 		std::vector<std::string> GetTemplates(const std::vector<std::string>& names) const;
 
 		void EnableHTTP(const char* server_address);
@@ -86,6 +88,7 @@ class Interface
 		std::mutex m_MsgLock;
 		std::condition_variable m_MsgApplied;
 		ScenarioConfig m_ScenarioConfig;
+		std::string m_Code;
 };
 }
 

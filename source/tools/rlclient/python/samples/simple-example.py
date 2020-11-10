@@ -70,6 +70,11 @@ train_spearmen = zero_ad.actions.train([civic_center], spearman_type)
 
 state = game.step([train_spearmen])
 
+# Let's enable fast actions so things build faster
+with open(path.join(samples_dir, 'fastactions.js'), 'r') as f:
+    fast_actions = f.read()
+game.evaluate(fast_actions)
+
 # Let's step the engine until the house has been built
 is_unit_busy = lambda state, unit_id: len(state.unit(unit_id).data['unitAIOrderData']) > 0
 while is_unit_busy(state, female_id):
