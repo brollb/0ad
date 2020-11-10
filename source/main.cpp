@@ -76,7 +76,7 @@ that of Atlas depending on commandline parameters.
 #include "graphics/TextureManager.h"
 #include "gui/GUIManager.h"
 #include "renderer/Renderer.h"
-#include "rlinterface/RLInterface.cpp"
+#include "rlinterface/RLInterface.h"
 #include "scriptinterface/ScriptEngine.h"
 #include "simulation2/Simulation2.h"
 #include "simulation2/system/TurnManager.h"
@@ -479,55 +479,9 @@ static void StartRLInterface(CmdLineArgs args)
 	if (!args.Get("rl-interface").empty())
 		server_address = args.Get("rl-interface");
 
-	g_RLInterface = new RLInterface();
+	g_RLInterface = std::unique_ptr<RL::Interface>(new RL::Interface);
 	g_RLInterface->EnableHTTP(server_address.c_str());
 	debug_printf("RL interface listening on %s\n", server_address.c_str());
-}
-
-static void RunRLServer(const bool isNonVisual, const std::vector<OsPath> modsToInstall, const CmdLineArgs args)
-{
-	int flags = INIT_MODS;
-	while (!Init(args, flags))
-	{
-		flags &= ~INIT_MODS;
-		Shutdown(SHUTDOWN_FROM_CONFIG);
-	}
-	g_Shutdown = ShutdownType::None;
-
-	std::vector<CStr> installedMods;
-	if (!modsToInstall.empty())
-	{
-		Paths paths(args);
-		CModInstaller installer(paths.UserData() / "mods", paths.Cache());
-
-		// Install the mods without deleting the pyromod files
-		for (const OsPath& modPath : modsToInstall)
-			installer.Install(modPath, g_ScriptRuntime, true);
-
-		installedMods = installer.GetInstalledMods();
-	}
-
-	if (isNonVisual)
-	{
-		InitNonVisual(args);
-		StartRLInterface(args);
-		while (g_Shutdown == ShutdownType::None)
-			g_RLInterface->TryApplyMessage();
-		QuitEngine();
-	}
-	else
-	{
-		InitGraphics(args, 0, installedMods);
-		MainControllerInit();
-		StartRLInterface(args);
-		while (g_Shutdown == ShutdownType::None)
-			Frame();
-	}
-
-	Shutdown(0);
-	MainControllerShutdown();
-	CXeromyces::Terminate();
-	delete g_RLInterface;
 }
 
 // moved into a helper function to ensure args is destroyed before
@@ -556,6 +510,7 @@ static void RunGameOrAtlas(int argc, const char* argv[])
 	const bool isVisualReplay = args.Has("replay-visual");
 	const bool isNonVisualReplay = args.Has("replay");
 	const bool isNonVisual = args.Has("autostart-nonvisual");
+	const bool isUsingRLInterface = args.Has("rl-interface");
 
 	const OsPath replayFile(
 		isVisualReplay ? args.Get("replay-visual") :
@@ -668,12 +623,6 @@ static void RunGameOrAtlas(int argc, const char* argv[])
 	const double res = timer_Resolution();
 	g_frequencyFilter = CreateFrequencyFilter(res, 30.0);
 
-	if (args.Has("rl-interface"))
-	{
-		RunRLServer(isNonVisual, modsToInstall, args);
-		return;
-	}
-
 	// run the game
 	int flags = INIT_MODS;
 	do
@@ -703,13 +652,23 @@ static void RunGameOrAtlas(int argc, const char* argv[])
 		if (isNonVisual)
 		{
 			InitNonVisual(args);
+			if (isUsingRLInterface)
+				StartRLInterface(args);
+
 			while (g_Shutdown == ShutdownType::None)
-				NonVisualFrame();
+			{
+				if (isUsingRLInterface)
+					g_RLInterface->TryApplyMessage();
+				else
+					NonVisualFrame();
+			}
 		}
 		else
 		{
 			InitGraphics(args, 0, installedMods);
 			MainControllerInit();
+			if (isUsingRLInterface)
+				StartRLInterface(args);
 			while (g_Shutdown == ShutdownType::None)
 				Frame();
 		}
