@@ -40,6 +40,19 @@ std::unique_ptr<RL::Interface> g_RLInterface = nullptr;
 
 namespace RL
 {
+Interface::Interface(const char* server_address) : m_GameMessage({GameMessageType::None})
+{
+	LOGMESSAGERENDER("Starting RL interface HTTP server");
+
+	const char *options[] = {
+		"listening_ports", server_address,
+		"num_threads", "6", // enough for the browser's parallel connection limit
+		nullptr
+	};
+	mg_context* mgContext = mg_start(MgCallback, this, options);
+	ENSURE(mgContext);
+}
+
 // Interactions with the game engine (g_Game) must be done in the main
 // thread as there are specific checks for this. We will pass messages
 // to the main thread to be applied (ie, "GameMessage"s).
@@ -242,23 +255,6 @@ void* Interface::MgCallback(mg_event event, struct mg_connection *conn, const st
 		return nullptr;
 	}
 };
-
-void Interface::EnableHTTP(const char* server_address)
-{
-	LOGMESSAGERENDER("Starting RL interface HTTP server");
-
-	// Ignore multiple enablings
-	if (m_MgContext)
-		return;
-
-	const char *options[] = {
-		"listening_ports", server_address,
-		"num_threads", "6", // enough for the browser's parallel connection limit
-		nullptr
-	};
-	m_MgContext = mg_start(MgCallback, this, options);
-	ENSURE(m_MgContext);
-}
 
 bool Interface::TryGetGameMessage(GameMessage& msg)
 {

@@ -80,11 +80,9 @@ struct GameMessage
  */
 class Interface
 {
+	NONCOPYABLE(Interface);
 public:
-	/**
-	 * Start the HTTP server providing the RL Interface.
-	 */
-	void EnableHTTP(const char* server_address);
+	Interface(const char* server_address);
 
 	/**
 	 * Process any pending messages from the RL client.
@@ -137,8 +135,6 @@ private:
 	std::string GetGameState() const;
 
 private:
-	mg_context* m_MgContext = nullptr;
-
 	GameMessage m_GameMessage;
 	ScenarioConfig m_ScenarioConfig;
 	std::string m_GameState;
