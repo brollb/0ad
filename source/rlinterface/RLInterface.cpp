@@ -46,7 +46,7 @@ Interface::Interface(const char* server_address) : m_GameMessage({GameMessageTyp
 
 	const char *options[] = {
 		"listening_ports", server_address,
-		"num_threads", "6", // enough for the browser's parallel connection limit
+		"num_threads", "1",
 		nullptr
 	};
 	mg_context* mgContext = mg_start(MgCallback, this, options);
@@ -269,8 +269,6 @@ bool Interface::TryGetGameMessage(GameMessage& msg)
 
 void Interface::TryApplyMessage()
 {
-	const static std::string EMPTY_STATE;
-	const bool nonVisual = !g_GUI;
 	const bool isGameStarted = g_Game && g_Game->IsGameStarted();
 	if (m_NeedsGameState && isGameStarted)
 	{
@@ -280,92 +278,101 @@ void Interface::TryApplyMessage()
 		m_NeedsGameState = false;
 	}
 
-	if (m_MsgLock.try_lock())
+	if (!m_MsgLock.try_lock())
+		return;
+
+	GameMessage msg;
+	if (!TryGetGameMessage(msg))
 	{
-		GameMessage msg;
-		if (TryGetGameMessage(msg))
+		m_MsgLock.unlock();
+		return;
+	}
+
+	ApplyMessage(msg);
+}
+
+void Interface::ApplyMessage(const GameMessage& msg)
+{
+	const static std::string EMPTY_STATE;
+	const bool nonVisual = !g_GUI;
+	const bool isGameStarted = g_Game && g_Game->IsGameStarted();
+	switch (msg.type)
+	{
+		case GameMessageType::Reset:
 		{
-			switch (msg.type)
+			if (isGameStarted)
+				EndGame();
+
+			g_Game = new CGame(m_ScenarioConfig.saveReplay);
+			ScriptInterface& scriptInterface = g_Game->GetSimulation2()->GetScriptInterface();
+			JSContext* cx = scriptInterface.GetContext();
+			JSAutoRequest rq(cx);
+			JS::RootedValue attrs(cx);
+			scriptInterface.ParseJSON(m_ScenarioConfig.content, &attrs);
+
+			g_Game->SetPlayerID(m_ScenarioConfig.playerID);
+			g_Game->StartGame(&attrs, "");
+
+			if (nonVisual)
 			{
-				case GameMessageType::Reset:
-				{
-					if (isGameStarted)
-						EndGame();
-
-					g_Game = new CGame(m_ScenarioConfig.saveReplay);
-					ScriptInterface& scriptInterface = g_Game->GetSimulation2()->GetScriptInterface();
-					JSContext* cx = scriptInterface.GetContext();
-					JSAutoRequest rq(cx);
-					JS::RootedValue attrs(cx);
-					scriptInterface.ParseJSON(m_ScenarioConfig.content, &attrs);
-
-					g_Game->SetPlayerID(m_ScenarioConfig.playerID);
-					g_Game->StartGame(&attrs, "");
-
-					if (nonVisual)
-					{
-						LDR_NonprogressiveLoad();
-						ENSURE(g_Game->ReallyStartGame() == PSRETURN_OK);
-						m_GameState = GetGameState();
-						m_MsgApplied.notify_one();
-						m_MsgLock.unlock();
-					}
-					else
-					{
-						JS::RootedValue initData(cx);
-						scriptInterface.CreateObject(cx, &initData);
-						scriptInterface.SetProperty(initData, "attribs", attrs);
-
-						JS::RootedValue playerAssignments(cx);
-						scriptInterface.CreateObject(cx, &playerAssignments);
-						scriptInterface.SetProperty(initData, "playerAssignments", playerAssignments);
-
-						g_GUI->SwitchPage(L"page_loading.xml", &scriptInterface, initData);
-						m_NeedsGameState = true;
-					}
-					break;
-				}
-
-				case GameMessageType::Commands:
-				{
-					if (!g_Game)
-					{
-						m_GameState = EMPTY_STATE;
-						m_MsgApplied.notify_one();
-						m_MsgLock.unlock();
-						return;
-					}
-					const ScriptInterface& scriptInterface = g_Game->GetSimulation2()->GetScriptInterface();
-					CLocalTurnManager* turnMgr = static_cast<CLocalTurnManager*>(g_Game->GetTurnManager());
-
-					for (const GameCommand& command : msg.commands)
-					{
-						JSContext* cx = scriptInterface.GetContext();
-						JSAutoRequest rq(cx);
-						JS::RootedValue commandJSON(cx);
-						scriptInterface.ParseJSON(command.json_cmd, &commandJSON);
-						turnMgr->PostCommand(command.playerID, commandJSON);
-					}
-
-					const double deltaRealTime = DEFAULT_TURN_LENGTH_SP;
-					if (nonVisual)
-					{
-						const double deltaSimTime = deltaRealTime * g_Game->GetSimRate();
-						const size_t maxTurns = static_cast<size_t>(g_Game->GetSimRate());
-						g_Game->GetTurnManager()->Update(deltaSimTime, maxTurns);
-					}
-					else
-						g_Game->Update(deltaRealTime);
-
-					m_GameState = GetGameState();
-					m_MsgApplied.notify_one();
-					m_MsgLock.unlock();
-					break;
-				}
+				LDR_NonprogressiveLoad();
+				ENSURE(g_Game->ReallyStartGame() == PSRETURN_OK);
+				m_GameState = GetGameState();
+				m_MsgApplied.notify_one();
+				m_MsgLock.unlock();
 			}
+			else
+			{
+				JS::RootedValue initData(cx);
+				scriptInterface.CreateObject(cx, &initData);
+				scriptInterface.SetProperty(initData, "attribs", attrs);
+
+				JS::RootedValue playerAssignments(cx);
+				scriptInterface.CreateObject(cx, &playerAssignments);
+				scriptInterface.SetProperty(initData, "playerAssignments", playerAssignments);
+
+				g_GUI->SwitchPage(L"page_loading.xml", &scriptInterface, initData);
+				m_NeedsGameState = true;
+			}
+			break;
 		}
-		else
+
+		case GameMessageType::Commands:
+		{
+			if (!g_Game)
+			{
+				m_GameState = EMPTY_STATE;
+				m_MsgApplied.notify_one();
+				m_MsgLock.unlock();
+				return;
+			}
+			const ScriptInterface& scriptInterface = g_Game->GetSimulation2()->GetScriptInterface();
+			CLocalTurnManager* turnMgr = static_cast<CLocalTurnManager*>(g_Game->GetTurnManager());
+
+			for (const GameCommand& command : msg.commands)
+			{
+				JSContext* cx = scriptInterface.GetContext();
+				JSAutoRequest rq(cx);
+				JS::RootedValue commandJSON(cx);
+				scriptInterface.ParseJSON(command.json_cmd, &commandJSON);
+				turnMgr->PostCommand(command.playerID, commandJSON);
+			}
+
+			const double deltaRealTime = DEFAULT_TURN_LENGTH_SP;
+			if (nonVisual)
+			{
+				const double deltaSimTime = deltaRealTime * g_Game->GetSimRate();
+				const size_t maxTurns = static_cast<size_t>(g_Game->GetSimRate());
+				g_Game->GetTurnManager()->Update(deltaSimTime, maxTurns);
+			}
+			else
+				g_Game->Update(deltaRealTime);
+
+			m_GameState = GetGameState();
+			m_MsgApplied.notify_one();
 			m_MsgLock.unlock();
+			break;
+		}
 	}
 }
 
@@ -383,6 +390,6 @@ std::string Interface::GetGameState() const
 
 bool Interface::IsGameRunning() const
 {
-	return !!g_Game;
+	return g_Game != nullptr;
 }
 }

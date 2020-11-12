@@ -85,7 +85,7 @@ public:
 	Interface(const char* server_address);
 
 	/**
-	 * Process any pending messages from the RL client.
+	 * Non-blocking call to process any pending messages from the RL client.
 	 * Updates m_GameState to the gamestate after messages have been processed.
 	 */
 	void TryApplyMessage();
@@ -127,6 +127,12 @@ private:
 	 * @return true if m_GameMessage is not empty, and updates @param msg, false otherwise (msg is then unchanged).
 	 */
 	bool TryGetGameMessage(GameMessage& msg);
+
+	/**
+	 * Process any pending messages from the RL client.
+	 * Updates m_GameState to the gamestate after messages have been processed.
+	 */
+	void ApplyMessage(const GameMessage& msg);
 
 	/**
 	 * @return the full gamestate as a JSON strong.
