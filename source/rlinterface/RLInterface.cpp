@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 Wildfire Games.
+/* Copyright (C) 2021 Wildfire Games.
  * This file is part of 0 A.D.
  *
  * 0 A.D. is free software: you can redistribute it and/or modify
@@ -24,8 +24,8 @@
 #include "gui/GUIManager.h"
 #include "ps/CLogger.h"
 #include "ps/Game.h"
-#include "ps/Loader.h"
 #include "ps/GameSetup/GameSetup.h"
+#include "ps/Loader.h"
 #include "simulation2/Simulation2.h"
 #include "simulation2/components/ICmpAIInterface.h"
 #include "simulation2/components/ICmpTemplateManager.h"
@@ -152,8 +152,7 @@ void* Interface::MgCallback(mg_event event, struct mg_connection *conn, const st
 			const int bufSize = std::atoi(val);
 			std::unique_ptr<char[]> buf = std::unique_ptr<char[]>(new char[bufSize]);
 			mg_read(conn, buf.get(), bufSize);
-			const std::string content(buf.get(), bufSize);
-			scenario.content = content;
+			scenario.content = buf.get();
 
 			const std::string gameState = interface->Reset(std::move(scenario));
 
@@ -176,21 +175,20 @@ void* Interface::MgCallback(mg_event event, struct mg_connection *conn, const st
 			int bufSize = std::atoi(val);
 			std::unique_ptr<char[]> buf = std::unique_ptr<char[]>(new char[bufSize]);
 			mg_read(conn, buf.get(), bufSize);
-			const std::string postData(buf.get(), bufSize);
-			std::stringstream postStream(postData);
+			std::stringstream postStream(buf.get());
 			std::string line;
 			std::vector<GameCommand> commands;
 
 			while (std::getline(postStream, line, '\n'))
 			{
-				GameCommand cmd;
 				const std::size_t splitPos = line.find(";");
-				if (splitPos != std::string::npos)
-				{
-					cmd.playerID = std::stoi(line.substr(0, splitPos));
-					cmd.json_cmd = line.substr(splitPos + 1);
-					commands.push_back(cmd);
-				}
+				if (splitPos == std::string::npos)
+					continue;
+
+				GameCommand cmd;
+				cmd.playerID = std::stoi(line.substr(0, splitPos));
+				cmd.json_cmd = line.substr(splitPos + 1);
+				commands.push_back(std::move(cmd));
 			}
 			const std::string gameState = interface->Step(std::move(commands));
 			if (gameState.empty())
