@@ -78,6 +78,13 @@ std::string Interface::Reset(ScenarioConfig&& scenario)
 	return SendGameMessage({ GameMessageType::Reset });
 }
 
+std::string Interface::Evaluate(std::string&& code)
+{
+	std::lock_guard<std::mutex> lock(m_Lock);
+	m_Code = std::move(code);
+	return SendGameMessage({ GameMessageType::Evaluate });
+}
+
 std::vector<std::string> Interface::GetTemplates(const std::vector<std::string>& names) const
 {
 	std::lock_guard<std::mutex> lock(m_Lock);
@@ -191,6 +198,34 @@ void* Interface::MgCallback(mg_event event, struct mg_connection *conn, const st
 				commands.push_back(std::move(cmd));
 			}
 			const std::string gameState = interface->Step(std::move(commands));
+			if (gameState.empty())
+			{
+				mg_printf(conn, "%s", notRunningResponse);
+				return handled;
+			}
+			else
+				stream << gameState.c_str();
+		}
+		else if (uri == "/evaluate")
+		{
+			if (!interface->IsGameRunning())
+			{
+				mg_printf(conn, "%s", notRunningResponse);
+				return handled;
+			}
+
+			const char* val = mg_get_header(conn, "Content-Length");
+			if (!val)
+			{
+				mg_printf(conn, "%s", noPostData);
+				return handled;
+			}
+			int bufSize = std::atoi(val);
+			std::unique_ptr<char> buf = std::unique_ptr<char>(new char[bufSize]);
+			mg_read(conn, buf.get(), bufSize);
+			std::string code(buf.get(), bufSize);
+
+			const std::string gameState = interface->Evaluate(std::move(code));
 			if (gameState.empty())
 			{
 				mg_printf(conn, "%s", notRunningResponse);
@@ -369,6 +404,21 @@ void Interface::ApplyMessage(const GameMessage& msg)
 			m_MsgLock.unlock();
 			break;
 		}
+        case GameMessageType::Evaluate:
+        {
+            if (!g_Game)
+            {
+                m_GameState = EMPTY_STATE;
+                m_MsgApplied.notify_one();
+                m_MsgLock.unlock();
+                return;
+            }
+            const ScriptInterface& scriptInterface = g_Game->GetSimulation2()->GetScriptInterface();
+            scriptInterface.Eval(m_Code.c_str());
+            m_MsgApplied.notify_one();
+            m_MsgLock.unlock();
+            break;
+        }
 	}
 }
 

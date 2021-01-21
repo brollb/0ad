@@ -27,3 +27,8 @@ class RLAPI():
         post_data = '\n'.join(names)
         response = self.post('templates', post_data)
         return zip(names, response.decode().split('\n'))
+
+    def evaluate(self, code):
+        response = self.post('evaluate', code)
+        # TODO: Add support for return values?
+        #return zip(names, response.decode().split('\n'))

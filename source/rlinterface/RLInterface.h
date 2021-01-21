@@ -45,6 +45,7 @@ enum class GameMessageType
 	None,
 	Reset,
 	Commands,
+	Evaluate,
 };
 
 /**
@@ -106,6 +107,12 @@ private:
 	std::string Reset(ScenarioConfig&& scenario);
 
 	/**
+	 * Evaluate JS code in the engine such as applying arbitrary modifiers.
+	 * @return the gamestate after script evaluation.
+	 */
+	std::string Evaluate(std::string&& code);
+
+	/**
 	 * @return template data for all templates of @param names.
 	 */
 	std::vector<std::string> GetTemplates(const std::vector<std::string>& names) const;
@@ -149,6 +156,7 @@ private:
 	mutable std::mutex m_Lock;
 	std::mutex m_MsgLock;
 	std::condition_variable m_MsgApplied;
+	std::string m_Code;
 };
 
 }
