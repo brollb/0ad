@@ -133,8 +133,8 @@ void* Interface::MgCallback(mg_event event, struct mg_connection *conn, const st
 
 		if (uri == "/reset")
 		{
-			const std::optional<std::string> data = GetRequestContent(conn);
-			if (data == std::nullopt)
+			const std::string data = GetRequestContent(conn);
+			if (data.empty())
 			{
 				mg_printf(conn, "%s", noPostData);
 				return handled;
@@ -149,7 +149,7 @@ void* Interface::MgCallback(mg_event event, struct mg_connection *conn, const st
 			if (len != -1)
 				scenario.playerID = std::stoi(playerID);
 
-			scenario.content = std::move(data.value());
+			scenario.content = std::move(data);
 
 			const std::string gameState = interface->Reset(std::move(scenario));
 
@@ -163,13 +163,13 @@ void* Interface::MgCallback(mg_event event, struct mg_connection *conn, const st
 				return handled;
 			}
 
-			const std::optional<std::string> data = GetRequestContent(conn);
-			if (data == std::nullopt)
+			const std::string data = GetRequestContent(conn);
+			if (data.empty())
 			{
 				mg_printf(conn, "%s", noPostData);
 				return handled;
 			}
-			std::stringstream postStream(data.value());
+			std::stringstream postStream(data);
 			std::string line;
 			std::vector<GameCommand> commands;
 
@@ -199,13 +199,13 @@ void* Interface::MgCallback(mg_event event, struct mg_connection *conn, const st
 				mg_printf(conn, "%s", notRunningResponse);
 				return handled;
 			}
-			const std::optional<std::string> data = GetRequestContent(conn);
-			if (data == std::nullopt)
+			const std::string data = GetRequestContent(conn);
+			if (data.empty())
 			{
 				mg_printf(conn, "%s", noPostData);
 				return handled;
 			}
-			std::stringstream postStream(data.value());
+			std::stringstream postStream(data);
 			std::string line;
 			std::vector<std::string> templateNames;
 			while (std::getline(postStream, line, '\n'))
@@ -244,16 +244,17 @@ void* Interface::MgCallback(mg_event event, struct mg_connection *conn, const st
 	}
 }
 
-std::optional<std::string> Interface::GetRequestContent(struct mg_connection *conn)
+std::string Interface::GetRequestContent(struct mg_connection *conn)
 {
+	const static std::string NO_CONTENT;
 	const char* val = mg_get_header(conn, "Content-Length");
 	if (!val)
 	{
-		return std::nullopt;
+		return NO_CONTENT;
 	}
 	const int contentSize = std::atoi(val);
 	std::string content(' ', contentSize);
-	mg_read(conn, content.data(), content.size());
+	mg_read(conn, content.data(), contentSize);
 	return content;
 }
 
