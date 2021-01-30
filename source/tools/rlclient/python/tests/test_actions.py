@@ -89,11 +89,6 @@ def test_attack():
     while state.unit(target.id()).health() >= initial_health:
         state = game.step()
 
-def test_debug_print():
-    state = game.reset(config)
-    debug_print = zero_ad.actions.debug_print('hello world!!')
-    state = game.step([debug_print])
-
 def test_chat():
     state = game.reset(config)
     chat = zero_ad.actions.chat('hello world!!')
