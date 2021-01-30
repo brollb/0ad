@@ -46,3 +46,12 @@ def test_fastactions():
         state = game.step()
     print('steps:', step_count)
     # TODO: add an assert
+
+def test_return_object():
+    pass
+
+def test_return_null():
+    pass
+
+def test_return_string():
+    pass
