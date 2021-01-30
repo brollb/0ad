@@ -140,8 +140,8 @@ void* Interface::MgCallback(mg_event event, struct mg_connection *conn, const st
 
 		if (uri == "/reset")
 		{
-			const char* val = mg_get_header(conn, "Content-Length");
-			if (!val)
+			std::string data = GetRequestContent(conn);
+			if (data.empty())
 			{
 				mg_printf(conn, "%s", noPostData);
 				return handled;
@@ -156,10 +156,7 @@ void* Interface::MgCallback(mg_event event, struct mg_connection *conn, const st
 			if (len != -1)
 				scenario.playerID = std::stoi(playerID);
 
-			const int bufSize = std::atoi(val);
-			std::unique_ptr<char[]> buf = std::unique_ptr<char[]>(new char[bufSize]);
-			mg_read(conn, buf.get(), bufSize);
-			scenario.content = buf.get();
+			scenario.content = std::move(data);
 
 			const std::string gameState = interface->Reset(std::move(scenario));
 
@@ -173,16 +170,8 @@ void* Interface::MgCallback(mg_event event, struct mg_connection *conn, const st
 				return handled;
 			}
 
-			const char* val = mg_get_header(conn, "Content-Length");
-			if (!val)
-			{
-				mg_printf(conn, "%s", noPostData);
-				return handled;
-			}
-			int bufSize = std::atoi(val);
-			std::unique_ptr<char[]> buf = std::unique_ptr<char[]>(new char[bufSize]);
-			mg_read(conn, buf.get(), bufSize);
-			std::stringstream postStream(buf.get());
+			std::string data = GetRequestContent(conn);
+			std::stringstream postStream(data);
 			std::string line;
 			std::vector<GameCommand> commands;
 
@@ -240,17 +229,13 @@ void* Interface::MgCallback(mg_event event, struct mg_connection *conn, const st
 				mg_printf(conn, "%s", notRunningResponse);
 				return handled;
 			}
-			const char* val = mg_get_header(conn, "Content-Length");
-			if (!val)
+			const std::string data = GetRequestContent(conn);
+			if (data.empty())
 			{
 				mg_printf(conn, "%s", noPostData);
 				return handled;
 			}
-			const int bufSize = std::atoi(val);
-			std::unique_ptr<char[]> buf = std::unique_ptr<char[]>(new char[bufSize]);
-			mg_read(conn, buf.get(), bufSize);
-			const std::string postData(buf.get(), bufSize);
-			std::stringstream postStream(postData);
+			std::stringstream postStream(data);
 			std::string line;
 			std::vector<std::string> templateNames;
 			while (std::getline(postStream, line, '\n'))
@@ -287,7 +272,22 @@ void* Interface::MgCallback(mg_event event, struct mg_connection *conn, const st
 		debug_warn(L"Invalid Mongoose event type");
 		return nullptr;
 	}
-};
+}
+
+std::string Interface::GetRequestContent(struct mg_connection *conn)
+{
+	const static std::string NO_CONTENT;
+	const char* val = mg_get_header(conn, "Content-Length");
+	if (!val)
+	{
+		return NO_CONTENT;
+	}
+	const int contentSize = std::atoi(val);
+
+	std::string content(contentSize, ' ');
+	mg_read(conn, content.data(), contentSize);
+	return content;
+}
 
 bool Interface::TryGetGameMessage(GameMessage& msg)
 {
