@@ -133,7 +133,7 @@ void* Interface::MgCallback(mg_event event, struct mg_connection *conn, const st
 
 		if (uri == "/reset")
 		{
-			const std::string data = GetRequestContent(conn);
+			std::string data = GetRequestContent(conn);
 			if (data.empty())
 			{
 				mg_printf(conn, "%s", noPostData);
@@ -163,12 +163,7 @@ void* Interface::MgCallback(mg_event event, struct mg_connection *conn, const st
 				return handled;
 			}
 
-			const std::string data = GetRequestContent(conn);
-			if (data.empty())
-			{
-				mg_printf(conn, "%s", noPostData);
-				return handled;
-			}
+			std::string data = GetRequestContent(conn);
 			std::stringstream postStream(data);
 			std::string line;
 			std::vector<GameCommand> commands;
@@ -253,7 +248,8 @@ std::string Interface::GetRequestContent(struct mg_connection *conn)
 		return NO_CONTENT;
 	}
 	const int contentSize = std::atoi(val);
-	std::string content(' ', contentSize);
+
+	std::string content(contentSize, ' ');
 	mg_read(conn, content.data(), contentSize);
 	return content;
 }
