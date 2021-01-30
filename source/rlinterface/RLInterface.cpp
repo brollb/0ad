@@ -203,16 +203,12 @@ void* Interface::MgCallback(mg_event event, struct mg_connection *conn, const st
 				return handled;
 			}
 
-			const char* val = mg_get_header(conn, "Content-Length");
-			if (!val)
+			std::string code = GetRequestContent(conn);
+			if (code.empty())
 			{
 				mg_printf(conn, "%s", noPostData);
 				return handled;
 			}
-			int bufSize = std::atoi(val);
-			std::unique_ptr<char> buf = std::unique_ptr<char>(new char[bufSize]);
-			mg_read(conn, buf.get(), bufSize);
-			std::string code(buf.get(), bufSize);
 
 			const std::string gameState = interface->Evaluate(std::move(code));
 			if (gameState.empty())
@@ -326,7 +322,7 @@ void Interface::TryApplyMessage()
 
 void Interface::ApplyMessage(const GameMessage& msg)
 {
-	const static std::string EMPTY_STATE;
+	const std::string EMPTY_STATE;
 	const bool nonVisual = !g_GUI;
 	const bool isGameStarted = g_Game && g_Game->IsGameStarted();
 	switch (msg.type)

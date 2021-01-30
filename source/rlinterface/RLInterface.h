@@ -151,7 +151,7 @@ private:
 private:
 	GameMessage m_GameMessage;
 	ScenarioConfig m_ScenarioConfig;
-	std::string m_GameState;
+    std::string m_GameState;
 	bool m_NeedsGameState = false;
 
 	mutable std::mutex m_Lock;
