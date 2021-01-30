@@ -7,7 +7,7 @@ This directory contains `zero_ad`, a python client for 0 AD which enables users 
 pip install .
 ```
 
-Development dependencies can be installed with `pip install -r requirements-dev.txt`. Tests are using pytest and can be run with `python -m pytest`.
+Development dependencies can be installed with `pip install -r requirements-dev.txt`. Tests are using pytest and can be run with `python -m pytest --timeout=8`.
 
 ## Basic Usage
 If there is not a running instance of 0 AD, first start 0 AD with the RL interface enabled:
