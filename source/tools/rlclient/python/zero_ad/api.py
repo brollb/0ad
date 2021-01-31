@@ -30,5 +30,4 @@ class RLAPI():
 
     def evaluate(self, code):
         response = self.post('evaluate', code)
-        # TODO: Add support for return values?
-        #return zip(names, response.decode().split('\n'))
+        return json.loads(response.decode())

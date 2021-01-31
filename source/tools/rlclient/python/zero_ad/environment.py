@@ -26,7 +26,7 @@ class ZeroAD():
         return self.current_state
 
     def evaluate(self, code):
-        self.api.evaluate(code)
+        return self.api.evaluate(code)
 
     def get_template(self, name):
         return self.get_templates([name])[0]

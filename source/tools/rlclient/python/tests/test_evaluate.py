@@ -8,32 +8,29 @@ scriptdir = path.dirname(path.realpath(__file__))
 with open(path.join(scriptdir, '..', 'samples', 'arcadia.json'), 'r') as f:
     config = f.read()
 
-with open(path.join(scriptdir, '..', 'samples', 'enable-fastactions.js'), 'r') as f:
+with open(path.join(scriptdir, 'fastactions.js'), 'r') as f:
     fastactions = f.read()
 
-def dist (p1, p2):
-    return math.sqrt(sum((math.pow(x2 - x1, 2) for (x1, x2) in zip(p1, p2))))
+def test_return_object():
+    state = game.reset(config)
+    result = game.evaluate('({"hello": "world"})')
+    assert type(result) is dict
+    assert result['hello'] == 'world'
 
-def center(units):
-    sum_position = map(sum, zip(*map(lambda u: u.position(), units)))
-    return [x/len(units) for x in sum_position]
+def test_return_null():
+    result = game.evaluate('null')
+    assert result == None
 
-def closest(units, position):
-    dists = (dist(unit.position(), position) for unit in units)
-    index = 0
-    min_dist = next(dists)
-    for (i, d) in enumerate(dists):
-        if d < min_dist:
-            index = i
-            min_dist = d
-
-    return units[index]
+def test_return_string():
+    state = game.reset(config)
+    result = game.evaluate('"cat"')
+    assert result == 'cat'
 
 def test_fastactions():
     state = game.reset(config)
     game.evaluate(fastactions)
     female_citizens = state.units(owner=1, type='female_citizen')
-    house_tpl = 'structures/spart_house'
+    house_tpl = 'structures/spart/house'
     house_count = len(state.units(owner=1, type=house_tpl))
     x = 680
     z = 640
@@ -41,17 +38,19 @@ def test_fastactions():
     # Check that they start building the house
     state = game.step([build_house])
     step_count = 0
-    while len(state.units(owner=1, type=house_tpl)) == house_count:
-        step_count += 1
+    new_house = lambda _=None: state.units(owner=1, type=house_tpl)[0]
+    initial_health = new_house().health(ratio=True)
+    while new_house().health(ratio=True) == initial_health:
         state = game.step()
-    print('steps:', step_count)
-    # TODO: add an assert
 
-def test_return_object():
-    pass
+    assert new_house().health(ratio=True) >= 1.0
 
-def test_return_null():
-    pass
-
-def test_return_string():
-    pass
+# TODO: should we have a test like below?
+# def test_throw_errors():
+    # error_thrown = False
+    # try:
+        # game.evaluate('throw new Error("This is a test")')
+    # except Exception as err:
+        # if str(err) == 'This is a test':
+            # error_thrown = True
+    # assert error_thrown
