@@ -3,7 +3,6 @@ import subprocess
 from os import path
 import os
 import zero_ad
-import time
 
 PYRO_BINARY = os.environ.get('PYROGENESIS_BIN', 'pyrogenesis')
 scriptdir = path.dirname(path.realpath(__file__))

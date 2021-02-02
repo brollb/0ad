@@ -1,5 +1,4 @@
 import zero_ad
-import json
 import math
 
 def dist (p1, p2):
@@ -31,55 +30,55 @@ def step_until(game, fn, message, max_steps=500):
 
     return state
 
-# def test_construct(arcadia):
-    # state = arcadia.current_state
-    # female_citizens = state.units(owner=1, type='female_citizen')
-    # house_tpl = 'structures/spart/house'
-    # house_count = len(state.units(owner=1, type=house_tpl))
-    # x = 680
-    # z = 640
-    # build_house = zero_ad.actions.construct(female_citizens, house_tpl, x, z, autocontinue=True)
-    # # Check that they start building the house
-    # state = arcadia.step([build_house])
-    # step_until(arcadia, lambda s: len(s.units(owner=1, type=house_tpl)) > house_count,
-            # 'House not created')
+def test_construct(arcadia):
+    state = arcadia.current_state
+    female_citizens = state.units(owner=1, type='female_citizen')
+    house_tpl = 'structures/spart/house'
+    house_count = len(state.units(owner=1, type=house_tpl))
+    x = 680
+    z = 640
+    build_house = zero_ad.actions.construct(female_citizens, house_tpl, x, z, autocontinue=True)
+    # Check that they start building the house
+    state = arcadia.step([build_house])
+    step_until(arcadia, lambda s: len(s.units(owner=1, type=house_tpl)) > house_count,
+            'House not created')
 
-# def test_gather(arcadia):
-    # state = arcadia.current_state
-    # female_citizen = state.units(owner=1, type='female_citizen')[0]
-    # trees = state.units(owner=0, type='tree')
-    # nearby_tree = closest(state.units(owner=0, type='tree'), female_citizen.position())
+def test_gather(arcadia):
+    state = arcadia.current_state
+    female_citizen = state.units(owner=1, type='female_citizen')[0]
+    trees = state.units(owner=0, type='tree')
+    nearby_tree = closest(state.units(owner=0, type='tree'), female_citizen.position())
 
-    # collect_wood = zero_ad.actions.gather([female_citizen], nearby_tree)
-    # state = arcadia.step([collect_wood])
-    # step_until(arcadia, lambda s: len(s.unit(female_citizen.id()).data['resourceCarrying']) == 1,
-            # 'Citizen did not pick up resource')
+    collect_wood = zero_ad.actions.gather([female_citizen], nearby_tree)
+    state = arcadia.step([collect_wood])
+    step_until(arcadia, lambda s: len(s.unit(female_citizen.id()).data['resourceCarrying']) == 1,
+            'Citizen did not pick up resource')
 
-# def test_train(arcadia):
-    # state = arcadia.current_state
-    # civic_centers = state.units(owner=1, type="civil_centre")
-    # spearman_type = 'units/spart/infantry_spearman_b'
-    # spearman_count = len(state.units(owner=1, type=spearman_type))
-    # train_spearmen = zero_ad.actions.train(civic_centers, spearman_type)
+def test_train(arcadia):
+    state = arcadia.current_state
+    civic_centers = state.units(owner=1, type="civil_centre")
+    spearman_type = 'units/spart/infantry_spearman_b'
+    spearman_count = len(state.units(owner=1, type=spearman_type))
+    train_spearmen = zero_ad.actions.train(civic_centers, spearman_type)
 
-    # state = arcadia.step([train_spearmen])
-    # step_until(arcadia, lambda s: len(s.units(owner=1, type=spearman_type)) > spearman_count,
-            # 'No spearmen created')
+    state = arcadia.step([train_spearmen])
+    step_until(arcadia, lambda s: len(s.units(owner=1, type=spearman_type)) > spearman_count,
+            'No spearmen created')
 
-# def test_walk(arcadia):
-    # state = arcadia.current_state
-    # female_citizens = state.units(owner=1, type='female_citizen')
-    # x = 680
-    # z = 640
-    # initial_distance = dist(center(female_citizens), [x, z])
+def test_walk(arcadia):
+    state = arcadia.current_state
+    female_citizens = state.units(owner=1, type='female_citizen')
+    x = 680
+    z = 640
+    initial_distance = dist(center(female_citizens), [x, z])
 
-    # walk = zero_ad.actions.walk(female_citizens, x, z)
-    # state = arcadia.step([walk])
-    # distance = initial_distance
-    # while distance >= initial_distance:
-        # state = arcadia.step()
-        # female_citizens = state.units(owner=1, type='female_citizen')
-        # distance = dist(center(female_citizens), [x, z])
+    walk = zero_ad.actions.walk(female_citizens, x, z)
+    state = arcadia.step([walk])
+    distance = initial_distance
+    while distance >= initial_distance:
+        state = arcadia.step()
+        female_citizens = state.units(owner=1, type='female_citizen')
+        distance = dist(center(female_citizens), [x, z])
 
 def test_attack(arcadia):
     state = arcadia.current_state
@@ -94,7 +93,7 @@ def test_attack(arcadia):
     step_until(arcadia, lambda s: s.unit(target.id()).health() < initial_health,
             'Target did not lose health')
 
-# def test_chat(arcadia):
-    # state = arcadia.current_state
-    # chat = zero_ad.actions.chat('hello world!!')
-    # state = arcadia.step([chat])
+def test_chat(arcadia):
+    state = arcadia.current_state
+    chat = zero_ad.actions.chat('hello world!!')
+    state = arcadia.step([chat])
