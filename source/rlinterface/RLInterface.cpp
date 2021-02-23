@@ -78,6 +78,13 @@ std::string Interface::Reset(ScenarioConfig&& scenario)
 	return SendGameMessage({ GameMessageType::Reset });
 }
 
+std::string Interface::Evaluate(std::string&& code)
+{
+	std::lock_guard<std::mutex> lock(m_Lock);
+	m_Code = std::move(code);
+	return SendGameMessage({ GameMessageType::Evaluate });
+}
+
 std::vector<std::string> Interface::GetTemplates(const std::vector<std::string>& names) const
 {
 	std::lock_guard<std::mutex> lock(m_Lock);
@@ -192,6 +199,30 @@ void* Interface::MgCallback(mg_event event, struct mg_connection *conn, const st
 			else
 				stream << gameState.c_str();
 		}
+		else if (uri == "/evaluate")
+		{
+			if (!interface->IsGameRunning())
+			{
+				mg_printf(conn, "%s", notRunningResponse);
+				return handled;
+			}
+
+			std::string code = GetRequestContent(conn);
+			if (code.empty())
+			{
+				mg_printf(conn, "%s", noPostData);
+				return handled;
+			}
+
+			const std::string gameState = interface->Evaluate(std::move(code));
+			if (gameState.empty())
+			{
+				mg_printf(conn, "%s", notRunningResponse);
+				return handled;
+			}
+			else
+				stream << gameState.c_str();
+		}
 		else if (uri == "/templates")
 		{
 			if (!interface->IsGameRunning()) {
@@ -295,7 +326,7 @@ void Interface::TryApplyMessage()
 
 void Interface::ApplyMessage(const GameMessage& msg)
 {
-	const static std::string EMPTY_STATE;
+	const std::string EMPTY_STATE;
 	const bool nonVisual = !g_GUI;
 	const bool isGameStarted = g_Game && g_Game->IsGameStarted();
 	switch (msg.type)
@@ -373,6 +404,24 @@ void Interface::ApplyMessage(const GameMessage& msg)
 			m_MsgLock.unlock();
 			break;
 		}
+        case GameMessageType::Evaluate:
+        {
+            if (!g_Game)
+            {
+                m_GameState = EMPTY_STATE;
+                m_MsgApplied.notify_one();
+                m_MsgLock.unlock();
+                return;
+            }
+            const ScriptInterface& scriptInterface = g_Game->GetSimulation2()->GetScriptInterface();
+            ScriptRequest rq(scriptInterface);
+            JS::RootedValue ret(rq.cx);
+            scriptInterface.Eval(m_Code.c_str(), &ret);
+            m_GameState = scriptInterface.StringifyJSON(&ret, false);
+            m_MsgApplied.notify_one();
+            m_MsgLock.unlock();
+            break;
+        }
 		default:
 		break;
 	}
